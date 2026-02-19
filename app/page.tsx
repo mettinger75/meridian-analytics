@@ -47,10 +47,26 @@ const SECTIONS = [
   { id: 'crossval', label: 'Cross-Validation', icon: Shield },
   { id: 'whatif', label: 'What-If Analysis', icon: AlertTriangle },
   { id: 'concurrent', label: 'Concurrent Analysis', icon: Activity },
+  { id: 'surge', label: 'Surge Coverage', icon: TrendingUp },
   { id: 'caselog', label: 'Case Log', icon: FileText },
   { id: 'schedules', label: 'Schedules', icon: Calendar },
   { id: 'methodology', label: 'Methodology', icon: BookOpen },
 ] as const;
+
+// ── Surge Coverage Requests (January 2026) ────────────────────────────
+const SURGE_REQUESTS = [
+  { date: '2026-01-12', dow: 'Mon', type: 'Extra Site', timeSlot: '7:00a – 3:00p', status: 'Confirmed' as const, providerType: 'MD' },
+  { date: '2026-01-13', dow: 'Tue', type: 'Extra Site', timeSlot: '7:00a – 3:00p', status: 'Confirmed' as const, providerType: 'CRNA' },
+  { date: '2026-01-16', dow: 'Fri', type: 'Late Coverage', timeSlot: '3:00p – 7:00p', status: 'Confirmed' as const, providerType: 'CRNA' },
+  { date: '2026-01-19', dow: 'Mon', type: 'Extra Site', timeSlot: '7:00a – 3:00p', status: 'Confirmed' as const, providerType: 'MD' },
+  { date: '2026-01-20', dow: 'Tue', type: 'Extra Site', timeSlot: '7:00a – 3:00p', status: 'Confirmed' as const, providerType: 'CRNA' },
+  { date: '2026-01-21', dow: 'Wed', type: 'Extra Site', timeSlot: '7:00a – 3:00p', status: 'Confirmed' as const, providerType: 'CRNA' },
+  { date: '2026-01-22', dow: 'Thu', type: 'Extra Site', timeSlot: '7:00a – 3:00p', status: 'Confirmed' as const, providerType: 'CRNA' },
+  { date: '2026-01-22', dow: 'Thu', type: 'Late Coverage', timeSlot: '3:00p – 7:00p', status: 'Not Approved' as const, providerType: null },
+  { date: '2026-01-28', dow: 'Wed', type: 'Extra Site', timeSlot: '7:00a – 3:00p', status: 'Confirmed' as const, providerType: 'MD' },
+  { date: '2026-01-28', dow: 'Wed', type: 'Late Coverage', timeSlot: '3:00p – 7:00p', status: 'Confirmed' as const, providerType: 'CRNA' },
+  { date: '2026-01-29', dow: 'Thu', type: 'Late Coverage', timeSlot: '3:00p – 7:00p', status: 'Confirmed' as const, providerType: 'CRNA' },
+];
 
 // ── Schedule PDFs ──────────────────────────────────────────────────────
 const SCHEDULE_PDFS = [
@@ -981,6 +997,113 @@ export default function ScheduleAnalysisPage() {
           <p className="text-xs mt-3 text-center" style={{ color: SLATE }}>
             Averaged across {monthFilter === 'all' ? ANALYSIS_META.weekdayCount : kpis.weekdayCount} weekdays{monthFilter !== 'all' ? ` in ${MONTH_LABELS[monthFilter]}` : ''}. Buffered = 30 min pre-case + 15 min post-case site commitment.
           </p>
+        </div>
+
+        {/* ── Surge Coverage ────────────────────────────────────────── */}
+        <SectionHeader id="surge" title="Surge Coverage Requests" icon={TrendingUp}
+          subtitle="Additional sites of service requested beyond the 10-site contract — January 2026" />
+
+        <div className="bg-white rounded-xl border border-border shadow-sm mb-8 overflow-hidden">
+          <div className="p-6">
+            <p className="text-sm leading-relaxed mb-4" style={{ color: NAVY }}>
+              During January 2026, Medical City Arlington submitted <strong>{SURGE_REQUESTS.length} surge coverage
+              requests</strong> across <strong>{new Set(SURGE_REQUESTS.map(s => s.date)).size} unique days</strong>,
+              requesting additional anesthesia providers beyond the contracted 10 sites.
+              Each request represents a day where case volume exceeded the capacity of the standing contract.
+            </p>
+
+            {/* Surge stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="p-3 rounded-lg text-center" style={{ backgroundColor: `${GOLD}10` }}>
+                <div className="text-xl font-bold" style={{ color: NAVY_DEEP }}>{SURGE_REQUESTS.length}</div>
+                <div className="text-xs" style={{ color: SLATE }}>Total Requests</div>
+              </div>
+              <div className="p-3 rounded-lg text-center" style={{ backgroundColor: `${EMERALD}10` }}>
+                <div className="text-xl font-bold" style={{ color: EMERALD }}>{SURGE_REQUESTS.filter(s => s.status === 'Confirmed').length}</div>
+                <div className="text-xs" style={{ color: SLATE }}>Confirmed</div>
+              </div>
+              <div className="p-3 rounded-lg text-center" style={{ backgroundColor: `${RED}10` }}>
+                <div className="text-xl font-bold" style={{ color: RED }}>{SURGE_REQUESTS.filter(s => s.status === 'Not Approved').length}</div>
+                <div className="text-xs" style={{ color: SLATE }}>Not Approved</div>
+              </div>
+              <div className="p-3 rounded-lg text-center" style={{ backgroundColor: `${NAVY}08` }}>
+                <div className="text-xl font-bold" style={{ color: NAVY_DEEP }}>{new Set(SURGE_REQUESTS.map(s => s.date)).size}</div>
+                <div className="text-xs" style={{ color: SLATE }}>Days Affected</div>
+              </div>
+            </div>
+
+            {/* Surge table */}
+            <div className="overflow-x-auto rounded-lg border" style={{ borderColor: '#D8DCE3' }}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: NAVY_DEEP }}>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-white">Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-white">Day</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-white">Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-white">Time Slot</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-white">Algorithm Sites</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-white">Status</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-white">Provider</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SURGE_REQUESTS.map((s, i) => {
+                    const algoDay = DAILY_ANALYSIS.find(d => d.date === s.date);
+                    const algoSites = algoDay?.minSitesWithBuffers ?? '—';
+                    return (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-white' : ''} style={i % 2 !== 0 ? { backgroundColor: '#F8F9FA' } : undefined}>
+                        <td className="px-4 py-3 font-medium" style={{ color: NAVY_DEEP }}>
+                          {new Date(s.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </td>
+                        <td className="px-4 py-3" style={{ color: NAVY }}>{s.dow}</td>
+                        <td className="px-4 py-3" style={{ color: NAVY }}>{s.type}</td>
+                        <td className="px-4 py-3 font-mono text-xs" style={{ color: SLATE }}>{s.timeSlot}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-block px-2 py-0.5 rounded text-xs font-bold"
+                            style={{
+                              backgroundColor: typeof algoSites === 'number' && algoSites > 10 ? `${RED}15` : typeof algoSites === 'number' && algoSites === 10 ? `${GOLD}15` : `${EMERALD}15`,
+                              color: typeof algoSites === 'number' && algoSites > 10 ? RED : typeof algoSites === 'number' && algoSites === 10 ? GOLD : EMERALD,
+                            }}>
+                            {algoSites}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-block px-2.5 py-1 rounded-full text-xs font-semibold"
+                            style={{
+                              backgroundColor: s.status === 'Confirmed' ? `${EMERALD}15` : `${RED}15`,
+                              color: s.status === 'Confirmed' ? EMERALD : RED,
+                            }}>
+                            {s.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center text-xs font-medium" style={{ color: SLATE }}>
+                          {s.providerType ?? '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Key insight callout */}
+            <div className="mt-6 rounded-xl p-4 border" style={{ backgroundColor: `${RED}06`, borderColor: `${RED}20` }}>
+              <div className="flex items-start gap-3">
+                <AlertTriangle size={18} color={RED} className="shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-sm font-bold mb-1" style={{ color: NAVY_DEEP }}>Key Insight: Denied Requests Understate True Demand</div>
+                  <p className="text-sm leading-relaxed" style={{ color: NAVY }}>
+                    On days where a surge request was <strong>not approved</strong>, the actual site demand would have been
+                    even higher than what the algorithm shows. The algorithm calculates minimum sites based on cases that
+                    were performed — but when an additional site is denied, cases may be delayed, cancelled, or
+                    rescheduled, <strong>artificially suppressing</strong> the true concurrent site count for that day.
+                    The {SURGE_REQUESTS.filter(s => s.status === 'Not Approved').length} denied request{SURGE_REQUESTS.filter(s => s.status === 'Not Approved').length !== 1 ? 's' : ''} in
+                    January would have pushed the site count even higher on {SURGE_REQUESTS.filter(s => s.status === 'Not Approved').length === 1 ? 'that day' : 'those days'}.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── De-identified Case Log ────────────────────────────────── */}
