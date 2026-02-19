@@ -1429,29 +1429,10 @@ export default function ScheduleAnalysisPage() {
                   </div>
                 </div>
 
-                {/* Example 2: GI Flip Rooms */}
+                {/* Example 2: Turnover & Setup */}
                 <div className="rounded-lg p-4 border" style={{ backgroundColor: 'white', borderColor: '#D8DCE3' }}>
                   <div className="flex items-start gap-3">
                     <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>2</div>
-                    <div>
-                      <div className="font-bold text-sm mb-1" style={{ color: NAVY_DEEP }}>GI Suite &ldquo;Flip Room&rdquo; Model</div>
-                      <p className="text-sm leading-relaxed" style={{ color: NAVY }}>
-                        Gastroenterologists frequently run <strong>2 rooms simultaneously</strong>, with one patient
-                        being scoped while the next is prepped. A single anesthesia provider covers both rooms,
-                        flipping between them with minimal downtime. A concurrent analysis sees two short-duration
-                        cases with gaps and may interpret this as periods of idle capacity. But the
-                        provider <strong>cannot leave</strong> — they&rsquo;re actively managing sedation in one room
-                        and setup in the other. This is <strong>one provider committed to one GI service line</strong>,
-                        even though the billing time appears fragmented across two rooms.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Example 3: Turnover & Setup */}
-                <div className="rounded-lg p-4 border" style={{ backgroundColor: 'white', borderColor: '#D8DCE3' }}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>3</div>
                     <div>
                       <div className="font-bold text-sm mb-1" style={{ color: NAVY_DEEP }}>OR Turnover &amp; Pre-Case Setup</div>
                       <p className="text-sm leading-relaxed" style={{ color: NAVY }}>
@@ -1467,10 +1448,10 @@ export default function ScheduleAnalysisPage() {
                   </div>
                 </div>
 
-                {/* Example 4: Late Starts & Add-Ons */}
+                {/* Example 3: Late Starts & Add-Ons */}
                 <div className="rounded-lg p-4 border" style={{ backgroundColor: 'white', borderColor: '#D8DCE3' }}>
                   <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>4</div>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>3</div>
                     <div>
                       <div className="font-bold text-sm mb-1" style={{ color: NAVY_DEEP }}>Late Starts &amp; Surgeon-Driven Delays</div>
                       <p className="text-sm leading-relaxed" style={{ color: NAVY }}>
@@ -1486,10 +1467,10 @@ export default function ScheduleAnalysisPage() {
                   </div>
                 </div>
 
-                {/* Example 5: IR & Short Cases */}
+                {/* Example 4: IR & Short Cases */}
                 <div className="rounded-lg p-4 border" style={{ backgroundColor: 'white', borderColor: '#D8DCE3' }}>
                   <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>5</div>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>4</div>
                     <div>
                       <div className="font-bold text-sm mb-1" style={{ color: NAVY_DEEP }}>Interventional Radiology &amp; Short/MAC Cases</div>
                       <p className="text-sm leading-relaxed" style={{ color: NAVY }}>
