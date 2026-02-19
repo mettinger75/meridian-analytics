@@ -190,7 +190,44 @@ for h, m in slots:
         "maxConcurrentBuffered": max(vals_buf) if vals_buf else 0,
     })
 
-print(f"  Computed {len(heatmap_data)} time slots")
+# Compute per-month concurrent heatmaps
+print("Computing per-month concurrent heatmaps...")
+months = ["10", "11", "12"]
+heatmap_by_month = {}
+for month in months:
+    month_dates = [d for d in weekday_dates if d[5:7] == month]
+    if not month_dates:
+        heatmap_by_month[month] = []
+        continue
+    month_heatmap = []
+    for h, m in slots:
+        key = f"{h:02d}:{m:02d}"
+        slot_buf_vals = []
+        slot_nobuf_vals = []
+        for d in month_dates:
+            day_cases = cases_by_date[d]
+            slot_time = datetime.strptime(f"{d} {h:02d}:{m:02d}:00", "%Y-%m-%d %H:%M:%S")
+            count_buf = 0
+            count_nobuf = 0
+            for c in day_cases:
+                buf_start = c["_start"] - timedelta(minutes=PRE_CASE_BUFFER_MIN)
+                buf_end = c["_end"] + timedelta(minutes=POST_CASE_BUFFER_MIN)
+                if buf_start <= slot_time < buf_end:
+                    count_buf += 1
+                if c["_start"] <= slot_time < c["_end"]:
+                    count_nobuf += 1
+            slot_buf_vals.append(count_buf)
+            slot_nobuf_vals.append(count_nobuf)
+        month_heatmap.append({
+            "time": key,
+            "avgConcurrent": round(sum(slot_nobuf_vals) / len(slot_nobuf_vals), 1) if slot_nobuf_vals else 0,
+            "maxConcurrent": max(slot_nobuf_vals) if slot_nobuf_vals else 0,
+            "avgConcurrentBuffered": round(sum(slot_buf_vals) / len(slot_buf_vals), 1) if slot_buf_vals else 0,
+            "maxConcurrentBuffered": max(slot_buf_vals) if slot_buf_vals else 0,
+        })
+    heatmap_by_month[month] = month_heatmap
+
+print(f"  Computed {len(heatmap_data)} time slots (all), plus 3 monthly heatmaps")
 
 # ── Step 3: Load algorithm results JSON ─────────────────────────────────
 
@@ -205,11 +242,13 @@ site_minutes = algo_data["site_minutes"]
 whatif_8 = algo_data["whatif_8"]
 whatif_9 = algo_data["whatif_9"]
 
-# Build daily analysis array
+# Build daily analysis array (with per-day what-if data)
 daily_analysis = []
 for d in sorted(min_sites.keys()):
     ms = min_sites[d]
     sm = site_minutes.get(d, {})
+    w9 = whatif_9.get(d, {})
+    w8 = whatif_8.get(d, {})
     daily_analysis.append({
         "date": d,
         "dow": ms["dow"],
@@ -221,6 +260,8 @@ for d in sorted(min_sites.keys()):
         "committedMins": sm.get("committed_minutes", 0),
         "capacityMins": sm.get("capacity_minutes", 7200),
         "utilizationPct": sm.get("utilization_pct", 0),
+        "whatif9Uncovered": w9.get("uncovered_count", 0),
+        "whatif8Uncovered": w8.get("uncovered_count", 0),
     })
 
 # Build what-if data
@@ -229,12 +270,12 @@ whatif_8_total = sum(v.get("uncovered_count", 0) for v in whatif_8.values())
 whatif_9_days = sum(1 for v in whatif_9.values() if v.get("uncovered_count", 0) > 0)
 whatif_8_days = sum(1 for v in whatif_8.values() if v.get("uncovered_count", 0) > 0)
 
-# Collect sample uncovered procedures for what-if
+# Collect sample uncovered procedures for what-if (all months)
 whatif_9_samples = []
 whatif_8_samples = []
 for d in sorted(whatif_9.keys()):
     for uc in whatif_9[d].get("uncovered_cases", [])[:3]:
-        if len(whatif_9_samples) < 15:
+        if len(whatif_9_samples) < 20:
             whatif_9_samples.append({
                 "date": d,
                 "procedure": uc.get("procedure", "")[:50],
@@ -244,7 +285,7 @@ for d in sorted(whatif_9.keys()):
             })
 for d in sorted(whatif_8.keys()):
     for uc in whatif_8[d].get("uncovered_cases", [])[:3]:
-        if len(whatif_8_samples) < 15:
+        if len(whatif_8_samples) < 20:
             whatif_8_samples.append({
                 "date": d,
                 "procedure": uc.get("procedure", "")[:50],
@@ -304,6 +345,8 @@ export interface DailyAnalysisRow {
   committedMins: number;
   capacityMins: number;
   utilizationPct: number;
+  whatif9Uncovered: number;
+  whatif8Uncovered: number;
 }
 
 export interface ConcurrentSlot {
@@ -386,6 +429,8 @@ export const WHATIF_DATA = ''' + json.dumps({
 export const DAILY_ANALYSIS: DailyAnalysisRow[] = ''' + json.dumps(daily_analysis, indent=2) + ''';
 
 export const CONCURRENT_HEATMAP: ConcurrentSlot[] = ''' + json.dumps(heatmap_data, indent=2) + ''';
+
+export const CONCURRENT_HEATMAP_BY_MONTH: Record<string, ConcurrentSlot[]> = ''' + json.dumps(heatmap_by_month, indent=2) + ''';
 
 export const CROSS_VALIDATION: CrossValidationRow[] = ''' + json.dumps(cross_validation, indent=2) + ''';
 
