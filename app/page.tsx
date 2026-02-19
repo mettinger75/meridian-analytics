@@ -1421,7 +1421,7 @@ export default function ScheduleAnalysisPage() {
                         ~120 minutes of total anesthesia time (about 20 minutes per procedure). A concurrent site
                         analysis would see that provider as &ldquo;idle&rdquo; for <strong>66% of the block</strong>,
                         suggesting the site is available for reallocation. In reality, the provider is committed
-                        to the cath lab for the full 6 hours — they cannot scrub into an OR case between TEEs.
+                        to the cath lab for the full 6 hours — they cannot leave to cover an OR case between TEEs.
                         The cardiologist expects anesthesia to be present and ready for each case in sequence.
                         <strong> One site, one provider, 6 hours — but only 2 hours of billing time.</strong>
                       </p>
