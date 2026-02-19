@@ -1385,12 +1385,136 @@ export default function ScheduleAnalysisPage() {
                 <div className="mt-2 w-full max-w-2xl rounded-xl p-4 text-center" style={{ backgroundColor: `${GOLD}20`, border: `2px solid ${GOLD}` }}>
                   <div className="text-sm font-bold" style={{ color: GOLD }}>Result</div>
                   <div className="text-xl font-bold text-white mt-1">
-                    Avg {SUMMARY.avgMinSitesNeeded} sites needed &middot; {Math.round(SUMMARY.daysNeeding10Plus / SUMMARY.totalWeekdays * 100)}% of days exceed contract
+                    Avg {kpis.avgMinSites} sites needed &middot; {kpis.weekdays > 0 ? Math.round(kpis.daysGe10 / kpis.weekdays * 100) : 0}% of days exceed contract
                   </div>
                   <div className="text-xs mt-1" style={{ color: '#9CA3AF' }}>
                     Mathematically proven minimum — real-world needs are often higher
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* ── Why Concurrent Site Analysis Fails ── */}
+            <div className="mt-6 rounded-xl p-6 border" style={{ backgroundColor: `${RED}04`, borderColor: `${RED}20` }}>
+              <h3 className="text-lg font-bold mb-2" style={{ color: NAVY_DEEP }}>
+                Why &ldquo;Concurrent Site&rdquo; Analysis Produces Flawed Results
+              </h3>
+              <p className="text-sm leading-relaxed mb-5" style={{ color: NAVY }}>
+                Some analyses attempt to determine staffing needs by sampling the number of anesthesia cases
+                happening at the same moment throughout the day. While this seems intuitive, it produces
+                <strong> systematically inaccurate results</strong> because it confuses <em>billing time</em> with
+                <em> site commitment time</em>. A provider assigned to a site cannot leave to cover another
+                case between procedures — they are dedicated to that location for the full block,
+                regardless of how much actual anesthesia time is recorded. Below are real-world examples
+                from MCA&rsquo;s workflow that illustrate these failures.
+              </p>
+
+              <div className="space-y-4">
+                {/* Example 1: TEE Block */}
+                <div className="rounded-lg p-4 border" style={{ backgroundColor: 'white', borderColor: '#D8DCE3' }}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>1</div>
+                    <div>
+                      <div className="font-bold text-sm mb-1" style={{ color: NAVY_DEEP }}>Cardiac/TEE Block Scheduling</div>
+                      <p className="text-sm leading-relaxed" style={{ color: NAVY }}>
+                        A provider scheduled for <strong>6 TEEs from 7:00 AM – 1:00 PM</strong> may only record
+                        ~120 minutes of total anesthesia time (about 20 minutes per procedure). A concurrent site
+                        analysis would see that provider as &ldquo;idle&rdquo; for <strong>66% of the block</strong>,
+                        suggesting the site is available for reallocation. In reality, the provider is committed
+                        to the cath lab for the full 6 hours — they cannot scrub into an OR case between TEEs.
+                        The cardiologist expects anesthesia to be present and ready for each case in sequence.
+                        <strong> One site, one provider, 6 hours — but only 2 hours of billing time.</strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Example 2: GI Flip Rooms */}
+                <div className="rounded-lg p-4 border" style={{ backgroundColor: 'white', borderColor: '#D8DCE3' }}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>2</div>
+                    <div>
+                      <div className="font-bold text-sm mb-1" style={{ color: NAVY_DEEP }}>GI Suite &ldquo;Flip Room&rdquo; Model</div>
+                      <p className="text-sm leading-relaxed" style={{ color: NAVY }}>
+                        Gastroenterologists frequently run <strong>2 rooms simultaneously</strong>, with one patient
+                        being scoped while the next is prepped. A single anesthesia provider covers both rooms,
+                        flipping between them with minimal downtime. A concurrent analysis sees two short-duration
+                        cases with gaps and may interpret this as periods of idle capacity. But the
+                        provider <strong>cannot leave</strong> — they&rsquo;re actively managing sedation in one room
+                        and setup in the other. This is <strong>one provider committed to one GI service line</strong>,
+                        even though the billing time appears fragmented across two rooms.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Example 3: Turnover & Setup */}
+                <div className="rounded-lg p-4 border" style={{ backgroundColor: 'white', borderColor: '#D8DCE3' }}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>3</div>
+                    <div>
+                      <div className="font-bold text-sm mb-1" style={{ color: NAVY_DEEP }}>OR Turnover &amp; Pre-Case Setup</div>
+                      <p className="text-sm leading-relaxed" style={{ color: NAVY }}>
+                        Between consecutive OR cases, a provider spends <strong>30–45 minutes</strong> on
+                        emergence, transport, PACU handoff, room turnover, next-patient evaluation, IV access,
+                        positioning, and induction. None of this shows up in &ldquo;anesthesia time,&rdquo; yet
+                        the provider is fully occupied and the site is unavailable. Concurrent analysis that only
+                        looks at overlapping anesthesia start/end times sees a <strong>&ldquo;gap&rdquo;</strong> between
+                        cases and may conclude the site was unoccupied — when in reality the
+                        provider <strong>never left the room.</strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Example 4: Late Starts & Add-Ons */}
+                <div className="rounded-lg p-4 border" style={{ backgroundColor: 'white', borderColor: '#D8DCE3' }}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>4</div>
+                    <div>
+                      <div className="font-bold text-sm mb-1" style={{ color: NAVY_DEEP }}>Late Starts &amp; Surgeon-Driven Delays</div>
+                      <p className="text-sm leading-relaxed" style={{ color: NAVY }}>
+                        When a surgeon&rsquo;s first case starts at <strong>8:30 AM instead of 7:00 AM</strong>,
+                        the anesthesia provider assigned to that room is still committed from 7:00. They&rsquo;re
+                        evaluating the patient, placing lines, and waiting for the surgical team. A concurrent
+                        site snapshot at 7:15 shows no active anesthesia — but that site is absolutely occupied.
+                        Similarly, <strong>add-on cases</strong> may arrive mid-afternoon with only 1–2 hours of
+                        actual procedure time, but the provider must stay committed through room setup, the case,
+                        and post-case duties.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Example 5: IR & Short Cases */}
+                <div className="rounded-lg p-4 border" style={{ backgroundColor: 'white', borderColor: '#D8DCE3' }}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: RED, color: 'white' }}>5</div>
+                    <div>
+                      <div className="font-bold text-sm mb-1" style={{ color: NAVY_DEEP }}>Interventional Radiology &amp; Short/MAC Cases</div>
+                      <p className="text-sm leading-relaxed" style={{ color: NAVY }}>
+                        IR suites and short/MAC rooms often have <strong>multiple short procedures with
+                        significant wait time</strong> between cases. An IR provider may cover 4–5 procedures
+                        across a full day, each lasting 15–30 minutes, but the provider is assigned to that
+                        suite for the block. Between procedures they&rsquo;re evaluating the next patient,
+                        reviewing imaging, and coordinating with the radiologist. A concurrent analysis sees
+                        5 brief spikes of activity and concludes this provider was only &ldquo;needed&rdquo;
+                        for 2 hours — <strong>missing the 8+ hours of dedicated site commitment.</strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Summary callout */}
+              <div className="mt-5 rounded-lg p-4" style={{ backgroundColor: NAVY_DEEP }}>
+                <p className="text-sm leading-relaxed text-center" style={{ color: '#E5E7EB' }}>
+                  <strong style={{ color: GOLD }}>The fundamental flaw:</strong> Concurrent analysis counts
+                  <em> billing time</em>, not <em>site commitment time</em>. Our interval partitioning algorithm
+                  avoids this entirely — it calculates the minimum number of providers who must be simultaneously
+                  committed to separate sites, accounting for the full lifecycle of each case from pre-case setup
+                  through post-case turnover.
+                </p>
               </div>
             </div>
           </div>
