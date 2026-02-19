@@ -164,8 +164,10 @@ function getBarColor(sites: number): string {
 // Holidays and severe weather days excluded from analysis
 const EXCLUDED_DATES: Record<string, string> = {
   '2025-11-27': 'Thanksgiving',
+  '2025-11-28': 'Day After Thanksgiving',
   '2025-12-24': 'Christmas Eve',
   '2025-12-25': 'Christmas Day',
+  '2025-12-26': 'Day After Christmas',
   '2026-01-01': 'New Year\'s Day',
   '2026-01-24': 'Severe Weather',
   '2026-01-25': 'Severe Weather',
@@ -745,11 +747,10 @@ export default function ScheduleAnalysisPage() {
               <p className="text-sm mt-0.5" style={{ color: NAVY }}>
                 The following dates are excluded from all calculations, charts, and statistics due to
                 reduced or atypical volumes:{' '}
-                <strong>Thanksgiving</strong> (Nov 27),{' '}
-                <strong>Christmas Eve</strong> (Dec 24),{' '}
-                <strong>Christmas Day</strong> (Dec 25),{' '}
+                <strong>Thanksgiving</strong> (Nov 27–28),{' '}
+                <strong>Christmas</strong> (Dec 24–26),{' '}
                 <strong>New Year&rsquo;s Day</strong> (Jan 1), and{' '}
-                <strong>Severe Weather Days</strong> (Jan 24 &amp; Jan 25).
+                <strong>Severe Weather Days</strong> (Jan 24–25).
               </p>
             </div>
           </div>
