@@ -1,26 +1,61 @@
 @import "tailwindcss";
 
 :root {
+  --navy-deep: #091525;
+  --navy: #0E1F35;
+  --navy-mid: #152A42;
+  --navy-light: #1C3555;
+  --gold: #C9A84C;
+  --gold-light: #DFC06A;
+  --gold-dim: #A68B3C;
+  --slate: #5A6B7D;
+  --light-bg: #F0F2F5;
+  --border-color: #D8DCE3;
+  --muted: #8892A2;
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #091525;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-navy-deep: var(--navy-deep);
+  --color-navy: var(--navy);
+  --color-navy-mid: var(--navy-mid);
+  --color-navy-light: var(--navy-light);
+  --color-gold: var(--gold);
+  --color-gold-light: var(--gold-light);
+  --color-gold-dim: var(--gold-dim);
+  --color-slate: var(--slate);
+  --color-light-bg: var(--light-bg);
+  --color-border: var(--border-color);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-source-sans);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-source-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Smooth scrolling for section navigation */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--light-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--slate);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--navy-mid);
 }
