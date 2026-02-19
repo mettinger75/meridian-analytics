@@ -33101,3 +33101,746 @@ export const CASE_LOG: CaseLogEntry[] = [
     "formTitle": "General Form"
   }
 ];
+
+
+export interface AfterHoursRow {
+  date: string;
+  dow: string;
+  totalCases: number;
+  at3pmBuffered: number;
+  at3pmRaw: number;
+  at5pmBuffered: number;
+  at5pmRaw: number;
+}
+
+export const AFTER_HOURS_DATA: AfterHoursRow[] = [
+  {
+    "date": "2025-10-01",
+    "dow": "Wed",
+    "totalCases": 30,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-10-02",
+    "dow": "Thu",
+    "totalCases": 29,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 1
+  },
+  {
+    "date": "2025-10-03",
+    "dow": "Fri",
+    "totalCases": 27,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-10-06",
+    "dow": "Mon",
+    "totalCases": 34,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-10-07",
+    "dow": "Tue",
+    "totalCases": 35,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 7,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 4
+  },
+  {
+    "date": "2025-10-08",
+    "dow": "Wed",
+    "totalCases": 37,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 0
+  },
+  {
+    "date": "2025-10-09",
+    "dow": "Thu",
+    "totalCases": 30,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 7,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-10-10",
+    "dow": "Fri",
+    "totalCases": 34,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-10-13",
+    "dow": "Mon",
+    "totalCases": 33,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 7,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-10-14",
+    "dow": "Tue",
+    "totalCases": 39,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 5
+  },
+  {
+    "date": "2025-10-15",
+    "dow": "Wed",
+    "totalCases": 29,
+    "at3pmBuffered": 9,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 1
+  },
+  {
+    "date": "2025-10-16",
+    "dow": "Thu",
+    "totalCases": 33,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 1,
+    "at5pmRaw": 1
+  },
+  {
+    "date": "2025-10-17",
+    "dow": "Fri",
+    "totalCases": 19,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 0,
+    "at5pmRaw": 0
+  },
+  {
+    "date": "2025-10-20",
+    "dow": "Mon",
+    "totalCases": 14,
+    "at3pmBuffered": 0,
+    "at3pmRaw": 0,
+    "at5pmBuffered": 0,
+    "at5pmRaw": 0
+  },
+  {
+    "date": "2025-10-21",
+    "dow": "Tue",
+    "totalCases": 22,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 4
+  },
+  {
+    "date": "2025-10-22",
+    "dow": "Wed",
+    "totalCases": 25,
+    "at3pmBuffered": 10,
+    "at3pmRaw": 7,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 4
+  },
+  {
+    "date": "2025-10-23",
+    "dow": "Thu",
+    "totalCases": 35,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-10-24",
+    "dow": "Fri",
+    "totalCases": 41,
+    "at3pmBuffered": 9,
+    "at3pmRaw": 7,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-10-27",
+    "dow": "Mon",
+    "totalCases": 29,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 5
+  },
+  {
+    "date": "2025-10-28",
+    "dow": "Tue",
+    "totalCases": 33,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-10-29",
+    "dow": "Wed",
+    "totalCases": 40,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 7,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-10-30",
+    "dow": "Thu",
+    "totalCases": 25,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-10-31",
+    "dow": "Fri",
+    "totalCases": 36,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-11-03",
+    "dow": "Mon",
+    "totalCases": 34,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 7,
+    "at5pmRaw": 7
+  },
+  {
+    "date": "2025-11-04",
+    "dow": "Tue",
+    "totalCases": 33,
+    "at3pmBuffered": 9,
+    "at3pmRaw": 7,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 4
+  },
+  {
+    "date": "2025-11-05",
+    "dow": "Wed",
+    "totalCases": 37,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-11-06",
+    "dow": "Thu",
+    "totalCases": 31,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-11-07",
+    "dow": "Fri",
+    "totalCases": 31,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-11-10",
+    "dow": "Mon",
+    "totalCases": 27,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 8,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 5
+  },
+  {
+    "date": "2025-11-11",
+    "dow": "Tue",
+    "totalCases": 29,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-11-12",
+    "dow": "Wed",
+    "totalCases": 35,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 4
+  },
+  {
+    "date": "2025-11-13",
+    "dow": "Thu",
+    "totalCases": 33,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-11-14",
+    "dow": "Fri",
+    "totalCases": 30,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-11-17",
+    "dow": "Mon",
+    "totalCases": 31,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 5
+  },
+  {
+    "date": "2025-11-18",
+    "dow": "Tue",
+    "totalCases": 27,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 1
+  },
+  {
+    "date": "2025-11-19",
+    "dow": "Wed",
+    "totalCases": 32,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 7,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 4
+  },
+  {
+    "date": "2025-11-20",
+    "dow": "Thu",
+    "totalCases": 33,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 4
+  },
+  {
+    "date": "2025-11-21",
+    "dow": "Fri",
+    "totalCases": 30,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 0
+  },
+  {
+    "date": "2025-11-24",
+    "dow": "Mon",
+    "totalCases": 29,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-11-25",
+    "dow": "Tue",
+    "totalCases": 33,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-11-26",
+    "dow": "Wed",
+    "totalCases": 33,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 7,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-12-01",
+    "dow": "Mon",
+    "totalCases": 29,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-12-02",
+    "dow": "Tue",
+    "totalCases": 30,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 1
+  },
+  {
+    "date": "2025-12-03",
+    "dow": "Wed",
+    "totalCases": 29,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 1
+  },
+  {
+    "date": "2025-12-04",
+    "dow": "Thu",
+    "totalCases": 31,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-12-05",
+    "dow": "Fri",
+    "totalCases": 26,
+    "at3pmBuffered": 2,
+    "at3pmRaw": 1,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-12-08",
+    "dow": "Mon",
+    "totalCases": 32,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 7,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-12-09",
+    "dow": "Tue",
+    "totalCases": 25,
+    "at3pmBuffered": 3,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-12-10",
+    "dow": "Wed",
+    "totalCases": 36,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-12-11",
+    "dow": "Thu",
+    "totalCases": 30,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-12-12",
+    "dow": "Fri",
+    "totalCases": 39,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 4
+  },
+  {
+    "date": "2025-12-15",
+    "dow": "Mon",
+    "totalCases": 33,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-12-16",
+    "dow": "Tue",
+    "totalCases": 30,
+    "at3pmBuffered": 9,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 5
+  },
+  {
+    "date": "2025-12-17",
+    "dow": "Wed",
+    "totalCases": 31,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 2,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2025-12-18",
+    "dow": "Thu",
+    "totalCases": 32,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 4
+  },
+  {
+    "date": "2025-12-19",
+    "dow": "Fri",
+    "totalCases": 40,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-12-22",
+    "dow": "Mon",
+    "totalCases": 26,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-12-23",
+    "dow": "Tue",
+    "totalCases": 19,
+    "at3pmBuffered": 0,
+    "at3pmRaw": 0,
+    "at5pmBuffered": 0,
+    "at5pmRaw": 0
+  },
+  {
+    "date": "2025-12-29",
+    "dow": "Mon",
+    "totalCases": 26,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2025-12-30",
+    "dow": "Tue",
+    "totalCases": 33,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2026-01-02",
+    "dow": "Fri",
+    "totalCases": 25,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 0,
+    "at5pmRaw": 0
+  },
+  {
+    "date": "2026-01-05",
+    "dow": "Mon",
+    "totalCases": 27,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2026-01-06",
+    "dow": "Tue",
+    "totalCases": 28,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2026-01-07",
+    "dow": "Wed",
+    "totalCases": 25,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 1
+  },
+  {
+    "date": "2026-01-08",
+    "dow": "Thu",
+    "totalCases": 22,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 1
+  },
+  {
+    "date": "2026-01-09",
+    "dow": "Fri",
+    "totalCases": 27,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2026-01-12",
+    "dow": "Mon",
+    "totalCases": 37,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 5
+  },
+  {
+    "date": "2026-01-13",
+    "dow": "Tue",
+    "totalCases": 34,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2026-01-14",
+    "dow": "Wed",
+    "totalCases": 33,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2026-01-15",
+    "dow": "Thu",
+    "totalCases": 25,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2026-01-16",
+    "dow": "Fri",
+    "totalCases": 37,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2026-01-19",
+    "dow": "Mon",
+    "totalCases": 32,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 0,
+    "at5pmRaw": 0
+  },
+  {
+    "date": "2026-01-20",
+    "dow": "Tue",
+    "totalCases": 35,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2026-01-21",
+    "dow": "Wed",
+    "totalCases": 31,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2026-01-22",
+    "dow": "Thu",
+    "totalCases": 29,
+    "at3pmBuffered": 5,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2026-01-23",
+    "dow": "Fri",
+    "totalCases": 36,
+    "at3pmBuffered": 8,
+    "at3pmRaw": 4,
+    "at5pmBuffered": 4,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2026-01-26",
+    "dow": "Mon",
+    "totalCases": 20,
+    "at3pmBuffered": 6,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2026-01-27",
+    "dow": "Tue",
+    "totalCases": 24,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 5,
+    "at5pmBuffered": 5,
+    "at5pmRaw": 5
+  },
+  {
+    "date": "2026-01-28",
+    "dow": "Wed",
+    "totalCases": 32,
+    "at3pmBuffered": 7,
+    "at3pmRaw": 6,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 2
+  },
+  {
+    "date": "2026-01-29",
+    "dow": "Thu",
+    "totalCases": 32,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 2,
+    "at5pmBuffered": 3,
+    "at5pmRaw": 3
+  },
+  {
+    "date": "2026-01-30",
+    "dow": "Fri",
+    "totalCases": 27,
+    "at3pmBuffered": 4,
+    "at3pmRaw": 3,
+    "at5pmBuffered": 2,
+    "at5pmRaw": 2
+  }
+];

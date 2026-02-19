@@ -16,9 +16,9 @@ import {
 import {
   ANALYSIS_META, SUMMARY, DAILY_ANALYSIS, WHATIF_DATA,
   CONCURRENT_HEATMAP, CONCURRENT_HEATMAP_BY_MONTH,
-  CASE_LOG, CROSS_VALIDATION,
+  CASE_LOG, CROSS_VALIDATION, AFTER_HOURS_DATA,
 } from './data/analysis-data';
-import type { CaseLogEntry, DailyAnalysisRow } from './data/analysis-data';
+import type { CaseLogEntry, DailyAnalysisRow, AfterHoursRow } from './data/analysis-data';
 
 // ── Brand Colors ───────────────────────────────────────────────────────
 const NAVY_DEEP = '#091525';
@@ -47,6 +47,7 @@ const SECTIONS = [
   { id: 'crossval', label: 'Cross-Validation', icon: Shield },
   { id: 'whatif', label: 'What-If Analysis', icon: AlertTriangle },
   { id: 'concurrent', label: 'Concurrent Analysis', icon: Activity },
+  { id: 'afterhours', label: 'After-Hours', icon: Clock },
   { id: 'surge', label: 'Surge Coverage', icon: TrendingUp },
   { id: 'caselog', label: 'Case Log', icon: FileText },
   { id: 'schedules', label: 'Schedules', icon: Calendar },
@@ -955,8 +956,8 @@ export default function ScheduleAnalysisPage() {
         </div>
 
         {/* ── Concurrent Analysis ───────────────────────────────────── */}
-        <SectionHeader id="concurrent" title="Concurrent Analysis" icon={Activity}
-          subtitle={`Average simultaneous sites in use throughout the operating day — ${MONTH_LABELS[monthFilter]}`} />
+        <SectionHeader id="concurrent" title="Concurrent Site Snapshot" icon={Activity}
+          subtitle={`Simultaneous active cases throughout the day vs. algorithm-proven provider need — ${MONTH_LABELS[monthFilter]}`} />
 
         <div className="bg-white rounded-xl border border-border p-6 mb-8 shadow-sm">
           <div className="flex flex-wrap gap-4 mb-4">
@@ -968,11 +969,15 @@ export default function ScheduleAnalysisPage() {
               <div className="text-xl font-bold" style={{ color: RED }}>{peakSlot.maxConcurrentBuffered}</div>
               <div className="text-xs" style={{ color: SLATE }}>Max ever (buffered)</div>
             </div>
+            <div className="text-center p-3 rounded-lg" style={{ backgroundColor: `${RED}10` }}>
+              <div className="text-xl font-bold" style={{ color: RED }}>{kpis.avgMinSites}</div>
+              <div className="text-xs" style={{ color: SLATE }}>Avg Min Sites (algorithm)</div>
+            </div>
           </div>
 
           <div className="w-full" style={{ height: 350 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={concurrentData} margin={{ top: 10, right: 20, bottom: 30, left: 10 }}>
+              <AreaChart data={concurrentData.map(d => ({ ...d, algorithmMinSites: Number(kpis.avgMinSites) }))} margin={{ top: 10, right: 20, bottom: 30, left: 10 }}>
                 <defs>
                   <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={GOLD} stopOpacity={0.4} />
@@ -994,14 +999,133 @@ export default function ScheduleAnalysisPage() {
                   stroke={GOLD} fill="url(#goldGradient)" strokeWidth={2} />
                 <Area type="monotone" dataKey="avgConcurrent" name="Avg Concurrent (raw)"
                   stroke={NAVY_MID} fill="url(#navyGradient)" strokeWidth={1.5} strokeDasharray="4 2" />
+                <Area type="monotone" dataKey="algorithmMinSites" name={`Algorithm Min Sites (avg ${kpis.avgMinSites})`}
+                  stroke={RED} fill="none" strokeWidth={2} strokeDasharray="8 4" />
                 <Legend />
               </AreaChart>
             </ResponsiveContainer>
           </div>
           <p className="text-xs mt-3 text-center" style={{ color: SLATE }}>
-            Averaged across {monthFilter === 'all' ? ANALYSIS_META.weekdayCount : kpis.weekdayCount} weekdays{monthFilter !== 'all' ? ` in ${MONTH_LABELS[monthFilter]}` : ''}. Buffered = 30 min pre-case + 15 min post-case site commitment.
+            Averaged across {monthFilter === 'all' ? ANALYSIS_META.weekdayCount : kpis.weekdayCount} weekdays{monthFilter !== 'all' ? ` in ${MONTH_LABELS[monthFilter]}` : ''}.
+            The gold and navy lines show <strong>concurrent active cases</strong> at each time of day — this is what a point-in-time snapshot sees.
+            The <span style={{ color: RED }}>red dashed line</span> shows the <strong>algorithm-proven minimum providers needed</strong> —
+            this accounts for non-concurrent commitments (setup, turnover, block scheduling) that concurrent snapshots miss.
+            The gap between the concurrent lines and the red line represents hidden provider demand.
           </p>
         </div>
+
+        {/* ── After-Hours Coverage ──────────────────────────────────── */}
+        <SectionHeader id="afterhours" title="After-Hours Coverage Analysis" icon={Clock}
+          subtitle={`Sites still active at 3:00 PM and 5:00 PM vs. contract step-down — ${MONTH_LABELS[monthFilter]}`} />
+
+        {(() => {
+          const ahFiltered = filterByMonth(AFTER_HOURS_DATA, monthFilter);
+          const exc3 = ahFiltered.filter(r => r.at3pmBuffered > 6).length;
+          const exc5 = ahFiltered.filter(r => r.at5pmBuffered > 3).length;
+          const avg3 = ahFiltered.length > 0 ? +(ahFiltered.reduce((s, r) => s + r.at3pmBuffered, 0) / ahFiltered.length).toFixed(1) : 0;
+          const avg5 = ahFiltered.length > 0 ? +(ahFiltered.reduce((s, r) => s + r.at5pmBuffered, 0) / ahFiltered.length).toFixed(1) : 0;
+          const max3 = ahFiltered.length > 0 ? Math.max(...ahFiltered.map(r => r.at3pmBuffered)) : 0;
+          const max5 = ahFiltered.length > 0 ? Math.max(...ahFiltered.map(r => r.at5pmBuffered)) : 0;
+          const pct3 = ahFiltered.length > 0 ? Math.round(exc3 / ahFiltered.length * 100) : 0;
+          const pct5 = ahFiltered.length > 0 ? Math.round(exc5 / ahFiltered.length * 100) : 0;
+
+          return (
+            <div className="bg-white rounded-xl border border-border shadow-sm mb-8 overflow-hidden">
+              <div className="p-6">
+                <p className="text-sm leading-relaxed mb-5" style={{ color: NAVY }}>
+                  Under the contract, staffing steps down to <strong>6 sites at 3:00 PM</strong> and{' '}
+                  <strong>3 sites at 5:00 PM</strong>. This analysis measures how many sites of service
+                  are still actively running at those times, revealing how frequently actual case volume
+                  exceeds the contracted step-down levels.
+                </p>
+
+                {/* KPI cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="p-4 rounded-lg border text-center" style={{ borderColor: '#D8DCE3' }}>
+                    <div className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: SLATE }}>At 3:00 PM</div>
+                    <div className="text-2xl font-bold" style={{ color: NAVY_DEEP }}>{avg3}</div>
+                    <div className="text-xs mt-1" style={{ color: SLATE }}>Avg sites active</div>
+                  </div>
+                  <div className="p-4 rounded-lg border text-center" style={{ borderColor: '#D8DCE3' }}>
+                    <div className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: SLATE }}>3pm Exceeds Contract</div>
+                    <div className="text-2xl font-bold" style={{ color: exc3 > 0 ? RED : EMERALD }}>{pct3}%</div>
+                    <div className="text-xs mt-1" style={{ color: SLATE }}>{exc3} of {ahFiltered.length} days &gt; 6 sites</div>
+                  </div>
+                  <div className="p-4 rounded-lg border text-center" style={{ borderColor: '#D8DCE3' }}>
+                    <div className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: SLATE }}>At 5:00 PM</div>
+                    <div className="text-2xl font-bold" style={{ color: NAVY_DEEP }}>{avg5}</div>
+                    <div className="text-xs mt-1" style={{ color: SLATE }}>Avg sites active</div>
+                  </div>
+                  <div className="p-4 rounded-lg border text-center" style={{ borderColor: '#D8DCE3' }}>
+                    <div className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: SLATE }}>5pm Exceeds Contract</div>
+                    <div className="text-2xl font-bold" style={{ color: exc5 > 0 ? RED : EMERALD }}>{pct5}%</div>
+                    <div className="text-xs mt-1" style={{ color: SLATE }}>{exc5} of {ahFiltered.length} days &gt; 3 sites</div>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto rounded-lg border" style={{ borderColor: '#D8DCE3' }}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ backgroundColor: NAVY_DEEP }}>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-white">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-white">Day</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-white">Cases</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-white">Sites @ 3pm</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-white">vs. 6</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-white">Sites @ 5pm</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-white">vs. 3</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ahFiltered.map((r, i) => {
+                        const d3 = r.at3pmBuffered - 6;
+                        const d5 = r.at5pmBuffered - 3;
+                        return (
+                          <tr key={r.date} className={i % 2 === 0 ? 'bg-white' : ''} style={i % 2 !== 0 ? { backgroundColor: '#F8F9FA' } : undefined}>
+                            <td className="px-4 py-2.5 font-medium" style={{ color: NAVY_DEEP }}>
+                              {new Date(r.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </td>
+                            <td className="px-4 py-2.5" style={{ color: NAVY }}>{r.dow}</td>
+                            <td className="px-4 py-2.5 text-center" style={{ color: SLATE }}>{r.totalCases}</td>
+                            <td className="px-4 py-2.5 text-center">
+                              <span className="inline-block px-2 py-0.5 rounded text-xs font-bold"
+                                style={{
+                                  backgroundColor: d3 > 0 ? `${RED}15` : d3 === 0 ? `${GOLD}15` : `${EMERALD}15`,
+                                  color: d3 > 0 ? RED : d3 === 0 ? GOLD : EMERALD,
+                                }}>{r.at3pmBuffered}</span>
+                            </td>
+                            <td className="px-4 py-2.5 text-center text-xs font-semibold"
+                              style={{ color: d3 > 0 ? RED : d3 === 0 ? SLATE : EMERALD }}>
+                              {d3 > 0 ? `+${d3}` : d3 === 0 ? '—' : d3}
+                            </td>
+                            <td className="px-4 py-2.5 text-center">
+                              <span className="inline-block px-2 py-0.5 rounded text-xs font-bold"
+                                style={{
+                                  backgroundColor: d5 > 0 ? `${RED}15` : d5 === 0 ? `${GOLD}15` : `${EMERALD}15`,
+                                  color: d5 > 0 ? RED : d5 === 0 ? GOLD : EMERALD,
+                                }}>{r.at5pmBuffered}</span>
+                            </td>
+                            <td className="px-4 py-2.5 text-center text-xs font-semibold"
+                              style={{ color: d5 > 0 ? RED : d5 === 0 ? SLATE : EMERALD }}>
+                              {d5 > 0 ? `+${d5}` : d5 === 0 ? '—' : d5}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <p className="text-xs mt-4" style={{ color: SLATE }}>
+                  Site counts include 30-min pre-case and 15-min post-case buffers.
+                  Red values exceed the contracted step-down level for that time.
+                  {ahFiltered.length} weekdays shown{monthFilter !== 'all' ? ` for ${MONTH_LABELS[monthFilter]}` : ''}.
+                </p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── Surge Coverage ────────────────────────────────────────── */}
         <SectionHeader id="surge" title="Surge Coverage Requests" icon={TrendingUp}
