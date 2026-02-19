@@ -1442,7 +1442,7 @@ export default function ScheduleAnalysisPage() {
                         the provider is fully occupied and the site is unavailable. Concurrent analysis that only
                         looks at overlapping anesthesia start/end times sees a <strong>&ldquo;gap&rdquo;</strong> between
                         cases and may conclude the site was unoccupied — when in reality the
-                        provider <strong>never left the room.</strong>
+                        provider <strong>was committed to that site the entire time.</strong>
                       </p>
                     </div>
                   </div>
