@@ -54,6 +54,7 @@ const SECTIONS = [
 
 // ── Schedule PDFs ──────────────────────────────────────────────────────
 const SCHEDULE_PDFS = [
+  // October 2025
   { date: '2025-10-01', file: '10-1-25.pdf', dow: 'Wed' },
   { date: '2025-10-02', file: '10-2-25.pdf', dow: 'Thu' },
   { date: '2025-10-03', file: '10-3-25.pdf', dow: 'Fri' },
@@ -76,6 +77,7 @@ const SCHEDULE_PDFS = [
   { date: '2025-10-29', file: '10-29-25.pdf', dow: 'Wed' },
   { date: '2025-10-30', file: '10-30-25.pdf', dow: 'Thu' },
   { date: '2025-10-31', file: '10-31-25.pdf', dow: 'Fri' },
+  // November 2025
   { date: '2025-11-03', file: '11-3-25.pdf', dow: 'Mon' },
   { date: '2025-11-04', file: '11-4-25.pdf', dow: 'Tue' },
   { date: '2025-11-05', file: '11-5-25.pdf', dow: 'Wed' },
@@ -86,6 +88,43 @@ const SCHEDULE_PDFS = [
   { date: '2025-11-12', file: '11-12-25.pdf', dow: 'Wed' },
   { date: '2025-11-13', file: '11-13-25.pdf', dow: 'Thu' },
   { date: '2025-11-17', file: '11-17-25.pdf', dow: 'Mon' },
+  // December 2025
+  { date: '2025-12-01', file: '12-01-25.pdf', dow: 'Mon' },
+  { date: '2025-12-02', file: '12-02-25.pdf', dow: 'Tue' },
+  { date: '2025-12-03', file: '12-03-25.pdf', dow: 'Wed' },
+  { date: '2025-12-04', file: '12-04-25.pdf', dow: 'Thu' },
+  { date: '2025-12-05', file: '12-05-25.pdf', dow: 'Fri' },
+  { date: '2025-12-08', file: '12-08-25.pdf', dow: 'Mon' },
+  { date: '2025-12-09', file: '12-09-25.pdf', dow: 'Tue' },
+  { date: '2025-12-10', file: '12-10-25.pdf', dow: 'Wed' },
+  { date: '2025-12-11', file: '12-11-25.pdf', dow: 'Thu' },
+  { date: '2025-12-12', file: '12-12-25.pdf', dow: 'Fri' },
+  { date: '2025-12-15', file: '12-15-25.pdf', dow: 'Mon' },
+  { date: '2025-12-16', file: '12-16-25.pdf', dow: 'Tue' },
+  { date: '2025-12-17', file: '12-17-25.pdf', dow: 'Wed' },
+  { date: '2025-12-18', file: '12-18-25.pdf', dow: 'Thu' },
+  { date: '2025-12-19', file: '12-19-25.pdf', dow: 'Fri' },
+  { date: '2025-12-22', file: '12-22-25.pdf', dow: 'Mon' },
+  { date: '2025-12-23', file: '12-23-25.pdf', dow: 'Tue' },
+  { date: '2025-12-24', file: '12-24-25.pdf', dow: 'Wed' },
+  { date: '2025-12-26', file: '12-26-25.pdf', dow: 'Fri' },
+  { date: '2025-12-30', file: '12-30-25.pdf', dow: 'Tue' },
+  // January 2026
+  { date: '2026-01-02', file: '1-2-26.pdf', dow: 'Fri' },
+  { date: '2026-01-05', file: '1-5-26.pdf', dow: 'Mon' },
+  { date: '2026-01-06', file: '1-6-26.pdf', dow: 'Tue' },
+  { date: '2026-01-07', file: '1-7-26.pdf', dow: 'Wed' },
+  { date: '2026-01-09', file: '1-9-26.pdf', dow: 'Fri' },
+  { date: '2026-01-13', file: '1-13-26.pdf', dow: 'Tue' },
+  { date: '2026-01-14', file: '1-14-26.pdf', dow: 'Wed' },
+  { date: '2026-01-15', file: '1-15-26.pdf', dow: 'Thu' },
+  { date: '2026-01-16', file: '1-16-26.pdf', dow: 'Fri' },
+  { date: '2026-01-22', file: '1-22-26.pdf', dow: 'Thu' },
+  { date: '2026-01-23', file: '1-23-26.pdf', dow: 'Fri' },
+  { date: '2026-01-27', file: '1-27-26.pdf', dow: 'Tue' },
+  { date: '2026-01-28', file: '1-28-26.pdf', dow: 'Wed' },
+  { date: '2026-01-29', file: '1-29-26.pdf', dow: 'Thu' },
+  { date: '2026-01-30', file: '1-30-26.pdf', dow: 'Fri' },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -1037,7 +1076,7 @@ export default function ScheduleAnalysisPage() {
 
         {/* ── Schedule PDFs ───────────────────────────────────────── */}
         <SectionHeader id="schedules" title="Daily OR Schedules" icon={Calendar}
-          subtitle="Original daily OR assignment schedules used for cross-validation (Oct 1 – Nov 17, 2025)" />
+          subtitle="Original daily OR assignment schedules used for cross-validation (Oct 2025 – Jan 2026)" />
 
         <div className="bg-white rounded-xl border border-border shadow-sm mb-8 p-6">
           <p className="text-sm mb-4" style={{ color: NAVY }}>
@@ -1046,7 +1085,7 @@ export default function ScheduleAnalysisPage() {
             sites of service, which were then compared against our algorithm&rsquo;s results in the Cross-Validation section above.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {SCHEDULE_PDFS.map(s => {
+            {filterByMonth(SCHEDULE_PDFS, monthFilter).map(s => {
               const d = new Date(s.date + 'T12:00:00');
               const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
               return (
@@ -1068,7 +1107,7 @@ export default function ScheduleAnalysisPage() {
             })}
           </div>
           <p className="text-xs mt-4" style={{ color: SLATE }}>
-            {SCHEDULE_PDFS.length} schedules available &middot; Click to open PDF in new tab
+            {filterByMonth(SCHEDULE_PDFS, monthFilter).length} schedules shown &middot; {SCHEDULE_PDFS.length} total available &middot; Click to open PDF in new tab
           </p>
         </div>
 
@@ -1208,7 +1247,7 @@ export default function ScheduleAnalysisPage() {
                     <div>
                       <div className="font-bold text-white text-sm">Cross-Validation &amp; Reporting</div>
                       <div className="text-xs mt-1" style={{ color: '#9CA3AF' }}>
-                        Compare algorithm results against 33 actual daily OR schedules (manually reviewed).
+                        Compare algorithm results against {SCHEDULE_PDFS.length} actual daily OR schedules (manually reviewed).
                         Generate daily, monthly, and aggregate reports with KPIs, utilization metrics,
                         concurrent site heatmaps, and de-identified case logs.
                       </div>
@@ -1268,7 +1307,7 @@ export default function ScheduleAnalysisPage() {
                 <h4 className="font-bold mb-2" style={{ color: NAVY_DEEP }}>Data Sources</h4>
                 <ul className="text-sm space-y-2" style={{ color: NAVY }}>
                   <li><strong>Case Data:</strong> Graphium EMR Case Detail export, {ANALYSIS_META.dateRange}. {ANALYSIS_META.totalNonLdCases.toLocaleString()} non-L&amp;D cases across {ANALYSIS_META.weekdayCount} weekdays and {ANALYSIS_META.weekendCount} weekends.</li>
-                  <li><strong>Schedule PDFs:</strong> 33 daily OR assignment schedules (Oct 1 &ndash; Nov 17, 2025), manually reviewed to count non-L&amp;D sites for cross-validation. Available for download in the Schedules section above.</li>
+                  <li><strong>Schedule PDFs:</strong> {SCHEDULE_PDFS.length} daily OR assignment schedules (Oct 2025 &ndash; Jan 2026), manually reviewed to count non-L&amp;D sites for cross-validation. Available for download in the Schedules section above.</li>
                   <li><strong>De-identification:</strong> All patient names, encounter numbers, surgeon names, and EMR links have been removed. Only timing, procedure descriptions, and site classifications are retained.</li>
                 </ul>
               </div>
