@@ -33,10 +33,11 @@ const RED = '#ef4444';
 const AMBER = '#f59e0b';
 
 const MONTH_LABELS: Record<string, string> = {
-  'all': 'All Months (Oct–Dec 2025)',
+  'all': 'All Months (Oct 2025 – Jan 2026)',
   '10': 'October 2025',
   '11': 'November 2025',
   '12': 'December 2025',
+  '01': 'January 2026',
 };
 
 // ── Section IDs ────────────────────────────────────────────────────────
@@ -448,7 +449,8 @@ export default function ScheduleAnalysisPage() {
         c.siteType, c.procedure, c.formTitle]);
     });
 
-    const monthSlug = monthFilter === 'all' ? 'oct-dec-2025' : `${['', '', '', '', '', '', '', '', '', '', 'oct', 'nov', 'dec'][parseInt(monthFilter)]}-2025`;
+    const monthSlugMap: Record<string, string> = { '10': 'oct-2025', '11': 'nov-2025', '12': 'dec-2025', '01': 'jan-2026' };
+    const monthSlug = monthFilter === 'all' ? 'oct2025-jan2026' : (monthSlugMap[monthFilter] || monthFilter);
     downloadCSV(`mca-sos-analysis-${monthSlug}.csv`,
       lines[0].length > 1 ? [] : [],  // We handle headers inline
       lines
@@ -457,9 +459,10 @@ export default function ScheduleAnalysisPage() {
 
   // ── Simpler CSV download for case log only ──
   const downloadCaseLog = useCallback(() => {
-    const label = monthFilter === 'all' ? 'oct-dec-2025' : `${['', '', '', '', '', '', '', '', '', '', 'oct', 'nov', 'dec'][parseInt(monthFilter)]}-2025`;
+    const caseSlugMap: Record<string, string> = { '10': 'oct-2025', '11': 'nov-2025', '12': 'dec-2025', '01': 'jan-2026' };
+    const caseSlug = monthFilter === 'all' ? 'oct2025-jan2026' : (caseSlugMap[monthFilter] || monthFilter);
     downloadCSV(
-      `mca-case-log-${label}.csv`,
+      `mca-case-log-${caseSlug}.csv`,
       ['Case #', 'Date', 'Start', 'End', 'Duration (min)', 'Site Type', 'Procedure', 'Form Title'],
       monthCases.map(c => [String(c.caseNum), c.date, c.startTime, c.endTime, String(c.durationMins), c.siteType, c.procedure, c.formTitle])
     );
@@ -540,9 +543,10 @@ export default function ScheduleAnalysisPage() {
                 }}
               >
                 <option value="all">All Months</option>
-                <option value="10">October</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
+                <option value="10">October 2025</option>
+                <option value="11">November 2025</option>
+                <option value="12">December 2025</option>
+                <option value="01">January 2026</option>
               </select>
 
               {/* Download button */}

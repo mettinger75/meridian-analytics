@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
 Export MCA analysis data as a TypeScript file for the Meridian Analytics site.
-De-identifies all PHI from the Graphium case detail export.
+De-identifies all PHI from the Graphium case detail exports.
+
+Processes TWO quarters:
+  - Q4 2025 (Oct-Dec): Case Detail (1).xlsx + mca_site_analysis_octdec2025.json
+  - January 2026: Case Detail.xlsx + mca_site_analysis_jan2026.json
 """
 
 import json
@@ -9,10 +13,25 @@ import heapq
 from datetime import datetime, timedelta
 from pathlib import Path
 import openpyxl
+from collections import defaultdict
 
 # ── Configuration ───────────────────────────────────────────────────────
-EXCEL_PATH = "/Users/markettinger/My Drive (markettingermd@gmail.com)/Downloads/Case Detail (1).xlsx"
-JSON_PATH = "/tmp/mca_site_analysis_v2.json"
+
+DATASETS = [
+    {
+        "label": "Q4 2025",
+        "excel": "/Users/markettinger/My Drive (markettingermd@gmail.com)/Downloads/Case Detail (1).xlsx",
+        "json": "/tmp/mca_site_analysis_octdec2025.json",
+        "months": ["10", "11", "12"],
+    },
+    {
+        "label": "Jan 2026",
+        "excel": "/Users/markettinger/My Drive (markettingermd@gmail.com)/Downloads/Case Detail.xlsx",
+        "json": "/tmp/mca_site_analysis_jan2026.json",
+        "months": ["01"],
+    },
+]
+
 OUTPUT_PATH = Path(__file__).parent.parent / "app" / "data" / "analysis-data.ts"
 
 PRE_CASE_BUFFER_MIN = 30
@@ -37,14 +56,14 @@ CROSS_VALIDATION_RAW = {
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
-def classify_site(form_title: str, procedure: str) -> str:
+def classify_site(form_title, procedure):
     ft = (form_title or "").lower()
     pr = (procedure or "").lower()
     if any(k in ft for k in ["labor", "l&d", "epidural", "ob "]):
         return "L&D"
-    if any(k in ft for k in ["labor", "l&d", "epidural", "ob "]):
-        return "L&D"
     if any(k in pr for k in ["labor epidural", "labor analgesia", "epidural placement"]):
+        return "L&D"
+    if "ob c-section" in ft or "cesarean" in pr:
         return "L&D"
     if any(k in ft for k in ["cardiac", "cath"]) or any(k in pr for k in ["cabg", "avr", "mvr", "sternotomy", "bypass", "valve", "tee", "pacemaker", "icd", "ablation", "heart cath", "stent", "angioplasty", "bi-v"]):
         return "Cardiac/Cath Lab"
@@ -66,146 +85,69 @@ def parse_datetime(val):
     except:
         return None
 
-def minimum_sites_needed(intervals):
-    """Interval partitioning via greedy + min-heap. Returns count."""
-    if not intervals:
-        return 0
-    indexed = sorted(enumerate(intervals), key=lambda x: (x[1][0], x[1][1]))
-    heap = []
-    next_site_id = 0
-    for _, (start, end) in indexed:
-        if heap and heap[0][0] <= start:
-            heapq.heappop(heap)
-        else:
-            next_site_id += 1
-        heapq.heappush(heap, (end,))
-    return next_site_id
+def parse_excel(excel_path, starting_case_num):
+    """Parse and de-identify cases from an Excel file. Returns (cases, next_case_num)."""
+    print(f"  Reading {excel_path}...")
+    wb = openpyxl.load_workbook(excel_path, read_only=True)
+    ws = wb.active
+    cases = []
+    case_num = starting_case_num
+    ld_count = 0
 
+    for row in ws.iter_rows(min_row=2):
+        vals = [cell.value for cell in row]
+        if len(vals) < 16:
+            continue
 
-# ── Step 1: Parse and de-identify case data ─────────────────────────────
+        form_title = str(vals[8] or "")
+        procedure = str(vals[7] or "")
+        dos_raw = vals[9]
+        anes_start_raw = vals[10]
+        anes_end_raw = vals[15]
 
-print("Reading Excel file...")
-wb = openpyxl.load_workbook(EXCEL_PATH, read_only=True)
-ws = wb.active
+        dos = parse_datetime(dos_raw)
+        anes_start = parse_datetime(anes_start_raw)
+        anes_end = parse_datetime(anes_end_raw)
 
-cases = []
-case_num = 0
-for row_idx, row in enumerate(ws.iter_rows(min_row=2)):
-    vals = [cell.value for cell in row]
-    if len(vals) < 16:
-        continue
+        if not dos or not anes_start or not anes_end:
+            continue
+        if anes_end <= anes_start:
+            continue
 
-    form_title = str(vals[8] or "")
-    procedure = str(vals[7] or "")
-    dos_raw = vals[9]
-    anes_start_raw = vals[10]
-    anes_end_raw = vals[15]
+        site_type = classify_site(form_title, procedure)
+        if site_type == "L&D":
+            ld_count += 1
+            continue
 
-    dos = parse_datetime(dos_raw)
-    anes_start = parse_datetime(anes_start_raw)
-    anes_end = parse_datetime(anes_end_raw)
+        case_num += 1
+        duration_mins = round((anes_end - anes_start).total_seconds() / 60)
 
-    if not dos or not anes_start or not anes_end:
-        continue
-    if anes_end <= anes_start:
-        continue
+        cases.append({
+            "caseNum": case_num,
+            "date": dos.strftime("%Y-%m-%d"),
+            "startTime": anes_start.strftime("%H:%M"),
+            "endTime": anes_end.strftime("%H:%M"),
+            "durationMins": duration_mins,
+            "siteType": site_type,
+            "procedure": procedure[:60],
+            "formTitle": form_title,
+            "_start": anes_start,
+            "_end": anes_end,
+        })
 
-    site_type = classify_site(form_title, procedure)
-    if site_type == "L&D":
-        continue
+    wb.close()
+    print(f"    {len(cases)} non-L&D cases, {ld_count} L&D excluded")
+    return cases, case_num
 
-    case_num += 1
-    duration_mins = round((anes_end - anes_start).total_seconds() / 60)
-
-    cases.append({
-        "caseNum": case_num,
-        "date": dos.strftime("%Y-%m-%d"),
-        "startTime": anes_start.strftime("%H:%M"),
-        "endTime": anes_end.strftime("%H:%M"),
-        "durationMins": duration_mins,
-        "siteType": site_type,
-        "procedure": procedure[:60],
-        "formTitle": form_title,
-        # Keep raw datetimes for concurrent analysis
-        "_start": anes_start,
-        "_end": anes_end,
-    })
-
-wb.close()
-print(f"  Parsed {case_num} non-L&D cases")
-
-# ── Step 2: Compute concurrent heatmap ──────────────────────────────────
-
-print("Computing concurrent heatmap...")
-# Group cases by date
-from collections import defaultdict
-cases_by_date = defaultdict(list)
-for c in cases:
-    cases_by_date[c["date"]].append(c)
-
-# Get weekday dates
-weekday_dates = []
-for d in sorted(cases_by_date.keys()):
-    dt = datetime.strptime(d, "%Y-%m-%d")
-    if dt.weekday() < 5:  # Mon-Fri
-        weekday_dates.append(d)
-
-# For each 15-min slot from 7:00 to 19:00, count concurrent cases (with buffers)
-slots = []
-for h in range(WORKDAY_START_HOUR, WORKDAY_END_HOUR):
-    for m in [0, 15, 30, 45]:
-        slots.append((h, m))
-
-concurrent_totals = {f"{h:02d}:{m:02d}": [] for h, m in slots}
-concurrent_totals_nobuf = {f"{h:02d}:{m:02d}": [] for h, m in slots}
-
-for d in weekday_dates:
-    day_cases = cases_by_date[d]
-    for h, m in slots:
-        slot_time = datetime.strptime(f"{d} {h:02d}:{m:02d}:00", "%Y-%m-%d %H:%M:%S")
-        # With buffers
-        count_buf = 0
-        count_nobuf = 0
-        for c in day_cases:
-            buf_start = c["_start"] - timedelta(minutes=PRE_CASE_BUFFER_MIN)
-            buf_end = c["_end"] + timedelta(minutes=POST_CASE_BUFFER_MIN)
-            if buf_start <= slot_time < buf_end:
-                count_buf += 1
-            if c["_start"] <= slot_time < c["_end"]:
-                count_nobuf += 1
-        key = f"{h:02d}:{m:02d}"
-        concurrent_totals[key].append(count_buf)
-        concurrent_totals_nobuf[key].append(count_nobuf)
-
-heatmap_data = []
-for h, m in slots:
-    key = f"{h:02d}:{m:02d}"
-    vals_buf = concurrent_totals[key]
-    vals_nobuf = concurrent_totals_nobuf[key]
-    heatmap_data.append({
-        "time": key,
-        "avgConcurrent": round(sum(vals_nobuf) / len(vals_nobuf), 1) if vals_nobuf else 0,
-        "maxConcurrent": max(vals_nobuf) if vals_nobuf else 0,
-        "avgConcurrentBuffered": round(sum(vals_buf) / len(vals_buf), 1) if vals_buf else 0,
-        "maxConcurrentBuffered": max(vals_buf) if vals_buf else 0,
-    })
-
-# Compute per-month concurrent heatmaps
-print("Computing per-month concurrent heatmaps...")
-months = ["10", "11", "12"]
-heatmap_by_month = {}
-for month in months:
-    month_dates = [d for d in weekday_dates if d[5:7] == month]
-    if not month_dates:
-        heatmap_by_month[month] = []
-        continue
-    month_heatmap = []
+def compute_concurrent_heatmap(cases_by_date, date_list, slots):
+    """Compute concurrent site heatmap for given dates."""
+    heatmap = []
     for h, m in slots:
         key = f"{h:02d}:{m:02d}"
-        slot_buf_vals = []
-        slot_nobuf_vals = []
-        for d in month_dates:
-            day_cases = cases_by_date[d]
+        vals_buf = []
+        vals_nobuf = []
+        for d in date_list:
+            day_cases = cases_by_date.get(d, [])
             slot_time = datetime.strptime(f"{d} {h:02d}:{m:02d}:00", "%Y-%m-%d %H:%M:%S")
             count_buf = 0
             count_nobuf = 0
@@ -216,107 +158,208 @@ for month in months:
                     count_buf += 1
                 if c["_start"] <= slot_time < c["_end"]:
                     count_nobuf += 1
-            slot_buf_vals.append(count_buf)
-            slot_nobuf_vals.append(count_nobuf)
-        month_heatmap.append({
+            vals_buf.append(count_buf)
+            vals_nobuf.append(count_nobuf)
+        heatmap.append({
             "time": key,
-            "avgConcurrent": round(sum(slot_nobuf_vals) / len(slot_nobuf_vals), 1) if slot_nobuf_vals else 0,
-            "maxConcurrent": max(slot_nobuf_vals) if slot_nobuf_vals else 0,
-            "avgConcurrentBuffered": round(sum(slot_buf_vals) / len(slot_buf_vals), 1) if slot_buf_vals else 0,
-            "maxConcurrentBuffered": max(slot_buf_vals) if slot_buf_vals else 0,
+            "avgConcurrent": round(sum(vals_nobuf) / len(vals_nobuf), 1) if vals_nobuf else 0,
+            "maxConcurrent": max(vals_nobuf) if vals_nobuf else 0,
+            "avgConcurrentBuffered": round(sum(vals_buf) / len(vals_buf), 1) if vals_buf else 0,
+            "maxConcurrentBuffered": max(vals_buf) if vals_buf else 0,
         })
-    heatmap_by_month[month] = month_heatmap
+    return heatmap
 
-print(f"  Computed {len(heatmap_data)} time slots (all), plus 3 monthly heatmaps")
 
-# ── Step 3: Load algorithm results JSON ─────────────────────────────────
+# ── Main Processing ─────────────────────────────────────────────────────
 
-print("Loading algorithm JSON...")
-with open(JSON_PATH) as f:
-    algo_data = json.load(f)
+all_cases = []
+all_daily_analysis = []
+all_whatif_9_samples = []
+all_whatif_8_samples = []
+all_cross_validation = []
 
-meta = algo_data["meta"]
-summary = algo_data["summary"]
-min_sites = algo_data["min_sites"]
-site_minutes = algo_data["site_minutes"]
-whatif_8 = algo_data["whatif_8"]
-whatif_9 = algo_data["whatif_9"]
+# Track aggregate stats
+total_weekdays = 0
+total_weekday_cases = 0
+total_weekday_min_sites_sum = 0
+max_min_sites_ever = 0
+total_days_ge10 = 0
+total_whatif9 = 0
+total_whatif8 = 0
+total_whatif9_days = 0
+total_whatif8_days = 0
+total_weekday_committed = 0
 
-# Build daily analysis array (with per-day what-if data)
-daily_analysis = []
-for d in sorted(min_sites.keys()):
-    ms = min_sites[d]
-    sm = site_minutes.get(d, {})
-    w9 = whatif_9.get(d, {})
-    w8 = whatif_8.get(d, {})
-    daily_analysis.append({
-        "date": d,
-        "dow": ms["dow"],
-        "isWeekday": ms["is_weekday"],
-        "isHoliday": ms.get("is_holiday", False),
-        "totalCases": ms["total_cases"],
-        "minSitesWithBuffers": ms["min_sites_with_buffers"],
-        "minSitesNoBuffers": ms["min_sites_no_buffers"],
-        "committedMins": sm.get("committed_minutes", 0),
-        "capacityMins": sm.get("capacity_minutes", 7200),
-        "utilizationPct": sm.get("utilization_pct", 0),
-        "whatif9Uncovered": w9.get("uncovered_count", 0),
-        "whatif8Uncovered": w8.get("uncovered_count", 0),
-    })
+case_num_offset = 0
 
-# Build what-if data
-whatif_9_total = sum(v.get("uncovered_count", 0) for v in whatif_9.values())
-whatif_8_total = sum(v.get("uncovered_count", 0) for v in whatif_8.values())
-whatif_9_days = sum(1 for v in whatif_9.values() if v.get("uncovered_count", 0) > 0)
-whatif_8_days = sum(1 for v in whatif_8.values() if v.get("uncovered_count", 0) > 0)
+print("=" * 60)
+print("PROCESSING ALL DATASETS")
+print("=" * 60)
 
-# Collect sample uncovered procedures for what-if (all months)
-whatif_9_samples = []
-whatif_8_samples = []
-for d in sorted(whatif_9.keys()):
-    for uc in whatif_9[d].get("uncovered_cases", [])[:3]:
-        if len(whatif_9_samples) < 20:
-            whatif_9_samples.append({
-                "date": d,
-                "procedure": uc.get("procedure", "")[:50],
-                "siteType": uc.get("site_type", "OR"),
-                "start": uc.get("start", ""),
-                "end": uc.get("end", ""),
-            })
-for d in sorted(whatif_8.keys()):
-    for uc in whatif_8[d].get("uncovered_cases", [])[:3]:
-        if len(whatif_8_samples) < 20:
-            whatif_8_samples.append({
-                "date": d,
-                "procedure": uc.get("procedure", "")[:50],
-                "siteType": uc.get("site_type", "OR"),
-                "start": uc.get("start", ""),
-                "end": uc.get("end", ""),
-            })
+for ds in DATASETS:
+    print(f"\n--- {ds['label']} ---")
 
-# Build cross-validation array
-cross_validation = []
-for d in sorted(min_sites.keys()):
-    ms = min_sites[d]
-    if not ms["is_weekday"]:
+    # Parse Excel
+    cases, case_num_offset = parse_excel(ds["excel"], case_num_offset)
+    all_cases.extend(cases)
+
+    # Load algorithm JSON
+    print(f"  Loading {ds['json']}...")
+    with open(ds["json"]) as f:
+        algo_data = json.load(f)
+
+    meta = algo_data["meta"]
+    summary = algo_data["summary"]
+    min_sites = algo_data["min_sites"]
+    site_minutes = algo_data["site_minutes"]
+    whatif_8 = algo_data["whatif_8"]
+    whatif_9 = algo_data["whatif_9"]
+
+    # Build daily analysis
+    for d in sorted(min_sites.keys()):
+        ms = min_sites[d]
+        sm = site_minutes.get(d, {})
+        w9 = whatif_9.get(d, {})
+        w8 = whatif_8.get(d, {})
+        all_daily_analysis.append({
+            "date": d,
+            "dow": ms["dow"],
+            "isWeekday": ms["is_weekday"],
+            "isHoliday": ms.get("is_holiday", False),
+            "totalCases": ms["total_cases"],
+            "minSitesWithBuffers": ms["min_sites_with_buffers"],
+            "minSitesNoBuffers": ms["min_sites_no_buffers"],
+            "committedMins": sm.get("committed_minutes", 0),
+            "capacityMins": sm.get("capacity_minutes", 7200),
+            "utilizationPct": sm.get("utilization_pct", 0),
+            "whatif9Uncovered": w9.get("uncovered_count", 0),
+            "whatif8Uncovered": w8.get("uncovered_count", 0),
+        })
+
+    # Aggregate stats
+    weekday_sites = [min_sites[d] for d in min_sites if min_sites[d]["is_weekday"]]
+    total_weekdays += len(weekday_sites)
+    total_weekday_cases += sum(ms["total_cases"] for ms in weekday_sites)
+    total_weekday_min_sites_sum += sum(ms["min_sites_with_buffers"] for ms in weekday_sites)
+    max_min_sites_ever = max(max_min_sites_ever, max(ms["min_sites_with_buffers"] for ms in weekday_sites) if weekday_sites else 0)
+    total_days_ge10 += sum(1 for ms in weekday_sites if ms["min_sites_with_buffers"] >= 10)
+    total_weekday_committed += sum(site_minutes.get(d, {}).get("committed_minutes", 0) for d in min_sites if min_sites[d]["is_weekday"])
+
+    # What-if
+    for d in sorted(whatif_9.keys()):
+        w9 = whatif_9[d]
+        total_whatif9 += w9.get("uncovered_count", 0)
+        if w9.get("uncovered_count", 0) > 0:
+            total_whatif9_days += 1
+        for uc in w9.get("uncovered_cases", [])[:3]:
+            if len(all_whatif_9_samples) < 30:
+                all_whatif_9_samples.append({
+                    "date": d,
+                    "procedure": uc.get("procedure", "")[:50],
+                    "siteType": uc.get("site_type", "OR"),
+                    "start": uc.get("start", ""),
+                    "end": uc.get("end", ""),
+                })
+
+    for d in sorted(whatif_8.keys()):
+        w8 = whatif_8[d]
+        total_whatif8 += w8.get("uncovered_count", 0)
+        if w8.get("uncovered_count", 0) > 0:
+            total_whatif8_days += 1
+        for uc in w8.get("uncovered_cases", [])[:3]:
+            if len(all_whatif_8_samples) < 30:
+                all_whatif_8_samples.append({
+                    "date": d,
+                    "procedure": uc.get("procedure", "")[:50],
+                    "siteType": uc.get("site_type", "OR"),
+                    "start": uc.get("start", ""),
+                    "end": uc.get("end", ""),
+                })
+
+    # Cross-validation (only applies to Oct-Nov schedule dates)
+    for d in sorted(min_sites.keys()):
+        ms = min_sites[d]
+        if not ms["is_weekday"]:
+            continue
+        sched = CROSS_VALIDATION_RAW.get(d)
+        all_cross_validation.append({
+            "date": d,
+            "dow": ms["dow"],
+            "totalCases": ms["total_cases"],
+            "algorithmMinSites": ms["min_sites_with_buffers"],
+            "algorithmMinSitesNoBuf": ms["min_sites_no_buffers"],
+            "scheduledSites": sched,
+        })
+
+    print(f"    {ds['label']}: {len(weekday_sites)} weekdays, avg {summary['avg_min_sites_needed']} sites")
+
+# Sort everything by date
+all_daily_analysis.sort(key=lambda x: x["date"])
+all_cross_validation.sort(key=lambda x: x["date"])
+all_cases.sort(key=lambda x: (x["date"], x["startTime"]))
+
+# Re-number cases sequentially
+for i, c in enumerate(all_cases, 1):
+    c["caseNum"] = i
+
+# ── Compute concurrent heatmaps ─────────────────────────────────────────
+
+print("\nComputing concurrent heatmaps...")
+
+cases_by_date = defaultdict(list)
+for c in all_cases:
+    cases_by_date[c["date"]].append(c)
+
+weekday_dates = sorted([d for d in cases_by_date.keys() if datetime.strptime(d, "%Y-%m-%d").weekday() < 5])
+
+slots = []
+for h in range(WORKDAY_START_HOUR, WORKDAY_END_HOUR):
+    for m in [0, 15, 30, 45]:
+        slots.append((h, m))
+
+# Overall heatmap
+heatmap_data = compute_concurrent_heatmap(cases_by_date, weekday_dates, slots)
+
+# Per-month heatmaps
+all_months = ["10", "11", "12", "01"]
+heatmap_by_month = {}
+for month in all_months:
+    month_dates = [d for d in weekday_dates if d[5:7] == month]
+    if not month_dates:
         continue
-    sched = CROSS_VALIDATION_RAW.get(d)
-    cross_validation.append({
-        "date": d,
-        "dow": ms["dow"],
-        "totalCases": ms["total_cases"],
-        "algorithmMinSites": ms["min_sites_with_buffers"],
-        "algorithmMinSitesNoBuf": ms["min_sites_no_buffers"],
-        "scheduledSites": sched,
-    })
+    heatmap_by_month[month] = compute_concurrent_heatmap(cases_by_date, month_dates, slots)
+    print(f"  Month {month}: {len(month_dates)} weekdays")
 
-# ── Step 4: Write TypeScript output ─────────────────────────────────────
+print(f"  Overall: {len(weekday_dates)} weekdays, {len(heatmap_data)} slots")
 
-print("Writing TypeScript output...")
+# ── Compute aggregate stats ─────────────────────────────────────────────
 
-# Remove internal datetime fields from case log
+total_non_ld_cases = len(all_cases)
+all_dates = sorted(set(c["date"] for c in all_cases))
+date_range = f"{all_dates[0]} to {all_dates[-1]}"
+weekday_count = len(weekday_dates)
+weekend_count = len([d for d in set(c["date"] for c in all_cases) if datetime.strptime(d, "%Y-%m-%d").weekday() >= 5])
+avg_min_sites = round(total_weekday_min_sites_sum / total_weekdays, 1) if total_weekdays > 0 else 0
+avg_peak = round(max(s["avgConcurrentBuffered"] for s in heatmap_data), 1) if heatmap_data else 0
+avg_weekday_cases = round(total_weekday_cases / total_weekdays, 1) if total_weekdays > 0 else 0
+avg_weekday_committed = round(total_weekday_committed / total_weekdays) if total_weekdays > 0 else 0
+
+print(f"\n=== AGGREGATE STATS ===")
+print(f"  Total non-L&D cases: {total_non_ld_cases}")
+print(f"  Date range: {date_range}")
+print(f"  Weekdays: {total_weekdays}, Weekends: {weekend_count}")
+print(f"  Avg min sites (weekdays): {avg_min_sites}")
+print(f"  Max min sites: {max_min_sites_ever}")
+print(f"  Days >= 10 sites: {total_days_ge10}/{total_weekdays} ({round(total_days_ge10/total_weekdays*100)}%)")
+print(f"  What-if 9: {total_whatif9} patients, {total_whatif9_days} days")
+print(f"  What-if 8: {total_whatif8} patients, {total_whatif8_days} days")
+
+# ── Write TypeScript output ─────────────────────────────────────────────
+
+print("\nWriting TypeScript output...")
+
 case_log_clean = []
-for c in cases:
+for c in all_cases:
     case_log_clean.append({
         "caseNum": c["caseNum"],
         "date": c["date"],
@@ -331,6 +374,7 @@ for c in cases:
 ts_content = '''// Auto-generated by scripts/export-data.py
 // DO NOT EDIT MANUALLY — all PHI has been removed
 // Generated: ''' + datetime.now().strftime("%Y-%m-%d %H:%M") + '''
+// Includes: Q4 2025 (Oct-Dec) + January 2026
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -390,11 +434,11 @@ export interface CrossValidationRow {
 export const ANALYSIS_META = ''' + json.dumps({
     "facility": "Medical City Arlington",
     "facilityCode": "MCA",
-    "dateRange": meta["date_range"],
-    "totalNonLdCases": meta["total_non_ld_cases"],
-    "ldExcluded": meta["ld_excluded"],
-    "weekdayCount": meta["weekday_count"],
-    "weekendCount": meta["weekend_count"],
+    "dateRange": date_range,
+    "totalNonLdCases": total_non_ld_cases,
+    "ldExcluded": True,
+    "weekdayCount": weekday_count,
+    "weekendCount": weekend_count,
     "preCaseBufferMin": PRE_CASE_BUFFER_MIN,
     "postCaseBufferMin": POST_CASE_BUFFER_MIN,
     "contractSites": NON_LD_CONTRACT_SITES,
@@ -402,37 +446,37 @@ export const ANALYSIS_META = ''' + json.dumps({
 }, indent=2) + ''' as const;
 
 export const SUMMARY = ''' + json.dumps({
-    "avgWeekdayCases": summary["avg_weekday_cases"],
-    "avgWeekdayCommittedMins": summary["avg_weekday_committed_mins"],
-    "avgMinSitesNeeded": summary["avg_min_sites_needed"],
-    "maxMinSitesNeeded": summary["max_min_sites_needed"],
-    "daysNeeding10Plus": summary["days_needing_10plus"],
-    "totalWeekdays": summary["total_weekdays"],
-    "whatif9Uncovered": summary["whatif_9_uncovered"],
-    "whatif8Uncovered": summary["whatif_8_uncovered"],
-    "avgPeakConcurrent": summary["avg_peak_concurrent"],
+    "avgWeekdayCases": avg_weekday_cases,
+    "avgWeekdayCommittedMins": avg_weekday_committed,
+    "avgMinSitesNeeded": avg_min_sites,
+    "maxMinSitesNeeded": max_min_sites_ever,
+    "daysNeeding10Plus": total_days_ge10,
+    "totalWeekdays": total_weekdays,
+    "whatif9Uncovered": total_whatif9,
+    "whatif8Uncovered": total_whatif8,
+    "avgPeakConcurrent": avg_peak,
 }, indent=2) + ''' as const;
 
 export const WHATIF_DATA = ''' + json.dumps({
     "nineSites": {
-        "totalUncovered": whatif_9_total,
-        "daysAffected": whatif_9_days,
-        "samples": whatif_9_samples,
+        "totalUncovered": total_whatif9,
+        "daysAffected": total_whatif9_days,
+        "samples": all_whatif_9_samples,
     },
     "eightSites": {
-        "totalUncovered": whatif_8_total,
-        "daysAffected": whatif_8_days,
-        "samples": whatif_8_samples,
+        "totalUncovered": total_whatif8,
+        "daysAffected": total_whatif8_days,
+        "samples": all_whatif_8_samples,
     },
 }, indent=2) + ''' as const;
 
-export const DAILY_ANALYSIS: DailyAnalysisRow[] = ''' + json.dumps(daily_analysis, indent=2) + ''';
+export const DAILY_ANALYSIS: DailyAnalysisRow[] = ''' + json.dumps(all_daily_analysis, indent=2) + ''';
 
 export const CONCURRENT_HEATMAP: ConcurrentSlot[] = ''' + json.dumps(heatmap_data, indent=2) + ''';
 
 export const CONCURRENT_HEATMAP_BY_MONTH: Record<string, ConcurrentSlot[]> = ''' + json.dumps(heatmap_by_month, indent=2) + ''';
 
-export const CROSS_VALIDATION: CrossValidationRow[] = ''' + json.dumps(cross_validation, indent=2) + ''';
+export const CROSS_VALIDATION: CrossValidationRow[] = ''' + json.dumps(all_cross_validation, indent=2) + ''';
 
 export const CASE_LOG: CaseLogEntry[] = ''' + json.dumps(case_log_clean, indent=2) + ''';
 '''
@@ -442,9 +486,9 @@ OUTPUT_PATH.write_text(ts_content)
 print(f"  Written to {OUTPUT_PATH}")
 print(f"  File size: {OUTPUT_PATH.stat().st_size / 1024:.0f} KB")
 print(f"  Cases exported: {len(case_log_clean)}")
-print(f"  Daily entries: {len(daily_analysis)}")
+print(f"  Daily entries: {len(all_daily_analysis)}")
 print(f"  Heatmap slots: {len(heatmap_data)}")
-print(f"  Cross-validation rows: {len(cross_validation)}")
+print(f"  Cross-validation rows: {len(all_cross_validation)}")
 
 # Verify no PHI
 content = OUTPUT_PATH.read_text()
