@@ -260,8 +260,6 @@ export default function ScheduleAnalysisPage() {
 
   // ── Global filters ──
   const [monthFilter, setMonthFilter] = useState<string>('all');
-  const [dayTypeFilter, setDayTypeFilter] = useState<'weekday' | 'weekend' | 'all'>('weekday');
-
   // ── Case log local filters ──
   const [caseSearch, setCaseSearch] = useState('');
   const [caseSiteFilter, setCaseSiteFilter] = useState('all');
@@ -282,14 +280,10 @@ export default function ScheduleAnalysisPage() {
     return filtered.filter(r => r.scheduledSites !== null);
   }, [monthFilter]);
 
-  // ── Daily chart data (applies day-type filter on top of month) ──
+  // ── Daily chart data (weekdays only) ──
   const filteredDaily = useMemo(() => {
-    return monthDailyData.filter(d => {
-      if (dayTypeFilter === 'weekday' && !d.isWeekday) return false;
-      if (dayTypeFilter === 'weekend' && d.isWeekday) return false;
-      return true;
-    });
-  }, [monthDailyData, dayTypeFilter]);
+    return monthDailyData.filter(d => d.isWeekday);
+  }, [monthDailyData]);
 
   // ── Dynamic KPIs computed from filtered data ──
   const kpis = useMemo(() => {
@@ -729,27 +723,32 @@ export default function ScheduleAnalysisPage() {
           <KPICard icon={Users} value={kpis.whatif8} label="At Risk (8 Sites)" sublabel="Patients affected" color={RED} />
         </div>
 
+        {/* ── Weekend Staffing Note ───────────────────────────────── */}
+        <div className="rounded-xl border p-4 mb-8 flex items-start gap-3" style={{ backgroundColor: `${NAVY}05`, borderColor: '#D8DCE3' }}>
+          <Clock size={18} color={GOLD} className="shrink-0 mt-0.5" />
+          <div>
+            <div className="text-sm font-bold" style={{ color: NAVY_DEEP }}>Weekend Staffing</div>
+            <p className="text-sm mt-0.5" style={{ color: NAVY }}>
+              Weekends require <strong>2 sites of service from 7:00 AM – 3:00 PM</strong> and{' '}
+              <strong>1 site thereafter</strong>. The analysis above focuses on weekday operations,
+              where the staffing demand is significantly higher and drives contract requirements.
+            </p>
+          </div>
+        </div>
+
         {/* ── Daily Analysis Chart ──────────────────────────────────── */}
         <SectionHeader id="daily" title="Daily Analysis" icon={Calendar}
-          subtitle={`Minimum simultaneous sites of service needed per day — ${MONTH_LABELS[monthFilter]}`} />
+          subtitle={`Minimum simultaneous sites of service needed per day (weekdays) — ${MONTH_LABELS[monthFilter]}`} />
 
         <div className="bg-white rounded-xl border border-border p-6 mb-8 shadow-sm">
-          <div className="flex flex-wrap gap-4 mb-6">
-            <div>
-              <label className="block text-xs font-semibold uppercase mb-1" style={{ color: SLATE }}>Day Type</label>
-              <select value={dayTypeFilter} onChange={e => setDayTypeFilter(e.target.value as 'weekday' | 'weekend' | 'all')}
-                className="px-3 py-2 rounded-lg border text-sm" style={{ borderColor: '#D8DCE3', color: NAVY }}>
-                <option value="weekday">Weekdays Only</option>
-                <option value="weekend">Weekends Only</option>
-                <option value="all">All Days</option>
-              </select>
+          <div className="flex flex-wrap gap-4 mb-6 items-center justify-between">
+            <div className="flex gap-3 text-xs">
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: RED }} /> &gt;10 Sites</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: GOLD }} /> =10 Sites</span>
+              <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: EMERALD }} /> &lt;10 Sites</span>
             </div>
-            <div className="flex items-end">
-              <div className="flex gap-3 text-xs">
-                <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: RED }} /> &gt;10 Sites</span>
-                <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: GOLD }} /> =10 Sites</span>
-                <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: EMERALD }} /> &lt;10 Sites</span>
-              </div>
+            <div className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: `${NAVY}08`, color: SLATE }}>
+              Weekdays only &middot; Weekends: 2 sites (7a–3p), 1 site thereafter
             </div>
           </div>
 
@@ -1317,7 +1316,7 @@ export default function ScheduleAnalysisPage() {
                   <li>Algorithm assumes no scheduling preference &mdash; any case can use any site</li>
                   <li>Real-world constraints (room specialization, equipment) may require additional sites</li>
                   <li>Buffer times are fixed estimates; actual turnover varies</li>
-                  <li>Weekend data included for completeness but capacity is typically reduced</li>
+                  <li>Weekend staffing is fixed at 2 sites (7a&ndash;3p) and 1 site thereafter; weekday analysis drives contract</li>
                   <li>Only 1 L&amp;D case was identified in this dataset &mdash; the Graphium export may have pre-filtered L&amp;D</li>
                 </ul>
               </div>
