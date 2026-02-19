@@ -11,7 +11,7 @@ import {
   BarChart3, TrendingUp, AlertTriangle, Clock, FileText,
   ChevronDown, ChevronUp, Search, ChevronLeft, ChevronRight,
   ArrowUpDown, Filter, Activity, Shield, Users, Calendar,
-  BookOpen, Download,
+  BookOpen, Download, Lock,
 } from 'lucide-react';
 import {
   ANALYSIS_META, SUMMARY, DAILY_ANALYSIS, WHATIF_DATA,
@@ -201,7 +201,24 @@ function downloadCSV(filename: string, headers: string[], rows: string[][]) {
 
 // ── Main Page ──────────────────────────────────────────────────────────
 
+const SITE_PASSWORD = 'MCAR0ck$';
+
 export default function ScheduleAnalysisPage() {
+  // ── Auth gate ──
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+
+  const handleLogin = useCallback((e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (passwordInput === SITE_PASSWORD) {
+      setIsAuthenticated(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  }, [passwordInput]);
+
   // ── Global filters ──
   const [monthFilter, setMonthFilter] = useState<string>('all');
   const [dayTypeFilter, setDayTypeFilter] = useState<'weekday' | 'weekend' | 'all'>('weekday');
@@ -467,6 +484,66 @@ export default function ScheduleAnalysisPage() {
       monthCases.map(c => [String(c.caseNum), c.date, c.startTime, c.endTime, String(c.durationMins), c.siteType, c.procedure, c.formTitle])
     );
   }, [monthFilter, monthCases]);
+
+  // ── Password Gate ──
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${NAVY_DEEP} 0%, ${NAVY_MID} 100%)` }}>
+        <div className="w-full max-w-md mx-4">
+          <div className="text-center mb-8">
+            <Image src="/meridian-anesthesia-logo-white.svg" alt="Meridian Anesthesia"
+              width={200} height={60} className="h-14 w-auto mx-auto mb-4" />
+            <div className="w-16 h-0.5 mx-auto mb-4" style={{ backgroundColor: GOLD }} />
+            <h1 className="text-xl font-bold text-white">Site-of-Service Necessity Analysis</h1>
+            <p className="text-sm mt-1" style={{ color: SLATE }}>Medical City Arlington &middot; Oct 2025 – Jan 2026</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="rounded-xl p-8 shadow-2xl border" style={{ backgroundColor: NAVY, borderColor: `${GOLD}30` }}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 rounded-lg" style={{ backgroundColor: `${GOLD}15` }}>
+                <Lock size={20} color={GOLD} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-white">Protected Report</h2>
+                <p className="text-xs" style={{ color: SLATE }}>Enter the password to access the analysis</p>
+              </div>
+            </div>
+
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={e => { setPasswordInput(e.target.value); setPasswordError(false); }}
+              placeholder="Enter password"
+              autoFocus
+              className="w-full px-4 py-3 rounded-lg text-sm font-medium outline-none transition-all"
+              style={{
+                backgroundColor: NAVY_MID,
+                border: `1.5px solid ${passwordError ? RED : `${GOLD}40`}`,
+                color: '#fff',
+              }}
+            />
+            {passwordError && (
+              <p className="text-xs mt-2 font-medium" style={{ color: RED }}>
+                Incorrect password. Please try again.
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full mt-4 py-3 rounded-lg text-sm font-bold transition-all hover:opacity-90"
+              style={{ backgroundColor: GOLD, color: NAVY_DEEP }}
+            >
+              Access Report
+            </button>
+          </form>
+
+          <p className="text-center text-xs mt-6" style={{ color: SLATE }}>
+            Meridian Anesthesia &middot; A Division of National Partners in Healthcare
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: LIGHT_BG }}>
