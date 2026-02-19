@@ -160,9 +160,21 @@ function getBarColor(sites: number): string {
   return EMERALD;
 }
 
+// ── Excluded Dates ────────────────────────────────────────────────────
+// Holidays and severe weather days excluded from analysis
+const EXCLUDED_DATES: Record<string, string> = {
+  '2025-11-27': 'Thanksgiving',
+  '2025-12-24': 'Christmas Eve',
+  '2025-12-25': 'Christmas Day',
+  '2026-01-01': 'New Year\'s Day',
+  '2026-01-24': 'Severe Weather',
+  '2026-01-25': 'Severe Weather',
+};
+const EXCLUDED_SET = new Set(Object.keys(EXCLUDED_DATES));
+
 function filterByMonth<T extends { date: string }>(data: T[], month: string): T[] {
-  if (month === 'all') return data;
-  return data.filter(d => d.date.substring(5, 7) === month);
+  const base = month === 'all' ? data : data.filter(d => d.date.substring(5, 7) === month);
+  return base.filter(d => !EXCLUDED_SET.has(d.date));
 }
 
 // ── Sub-Components ─────────────────────────────────────────────────────
@@ -301,38 +313,26 @@ export default function ScheduleAnalysisPage() {
     return monthDailyData.filter(d => d.isWeekday);
   }, [monthDailyData]);
 
-  // ── Dynamic KPIs computed from filtered data ──
+  // ── Dynamic KPIs computed from filtered data (always recomputed to respect exclusions) ──
   const kpis = useMemo(() => {
-    if (monthFilter === 'all') {
-      return {
-        totalCases: ANALYSIS_META.totalNonLdCases,
-        avgMinSites: SUMMARY.avgMinSitesNeeded,
-        maxMinSites: SUMMARY.maxMinSitesNeeded,
-        weekdays: SUMMARY.totalWeekdays,
-        daysGe10: SUMMARY.daysNeeding10Plus,
-        whatif9: SUMMARY.whatif9Uncovered,
-        whatif8: SUMMARY.whatif8Uncovered,
-        dateLabel: ANALYSIS_META.dateRange,
-        weekdayCount: ANALYSIS_META.weekdayCount,
-        weekendCount: ANALYSIS_META.weekendCount,
-      };
-    }
     const weekdayData = monthDailyData.filter(d => d.isWeekday);
-    const totalCases = monthDailyData.reduce((s, d) => s + d.totalCases, 0);
+    const totalCases = monthCases.length;
     const avgMinSites = weekdayData.length > 0
       ? +(weekdayData.reduce((s, d) => s + d.minSitesWithBuffers, 0) / weekdayData.length).toFixed(1)
       : 0;
-    const maxMinSites = monthDailyData.length > 0
-      ? Math.max(...monthDailyData.map(d => d.minSitesWithBuffers))
+    const maxMinSites = weekdayData.length > 0
+      ? Math.max(...weekdayData.map(d => d.minSitesWithBuffers))
       : 0;
     const daysGe10 = weekdayData.filter(d => d.minSitesWithBuffers >= 10).length;
-    const whatif9 = monthDailyData.reduce((s, d) => s + d.whatif9Uncovered, 0);
-    const whatif8 = monthDailyData.reduce((s, d) => s + d.whatif8Uncovered, 0);
+    const whatif9 = weekdayData.reduce((s, d) => s + d.whatif9Uncovered, 0);
+    const whatif8 = weekdayData.reduce((s, d) => s + d.whatif8Uncovered, 0);
 
-    const dates = monthDailyData.map(d => d.date).sort();
-    const dateLabel = dates.length > 0
-      ? `${formatDateFull(dates[0])} to ${formatDateFull(dates[dates.length - 1])}`
-      : '';
+    const dateLabel = monthFilter === 'all'
+      ? ANALYSIS_META.dateRange
+      : (() => {
+          const dates = monthDailyData.map(d => d.date).sort();
+          return dates.length > 0 ? `${formatDateFull(dates[0])} to ${formatDateFull(dates[dates.length - 1])}` : '';
+        })();
 
     return {
       totalCases,
@@ -346,36 +346,22 @@ export default function ScheduleAnalysisPage() {
       weekdayCount: weekdayData.length,
       weekendCount: monthDailyData.filter(d => !d.isWeekday).length,
     };
-  }, [monthFilter, monthDailyData]);
+  }, [monthFilter, monthDailyData, monthCases]);
 
-  // ── What-if per month ──
+  // ── What-if (always recomputed to respect exclusions) ──
   const whatifStats = useMemo(() => {
-    if (monthFilter === 'all') {
-      return {
-        nine: {
-          total: WHATIF_DATA.nineSites.totalUncovered,
-          daysAffected: WHATIF_DATA.nineSites.daysAffected,
-          samples: WHATIF_DATA.nineSites.samples,
-        },
-        eight: {
-          total: WHATIF_DATA.eightSites.totalUncovered,
-          daysAffected: WHATIF_DATA.eightSites.daysAffected,
-          samples: WHATIF_DATA.eightSites.samples,
-        },
-      };
-    }
     const weekdayData = monthDailyData.filter(d => d.isWeekday);
     const nineTotal = weekdayData.reduce((s, d) => s + d.whatif9Uncovered, 0);
     const nineDays = weekdayData.filter(d => d.whatif9Uncovered > 0).length;
     const eightTotal = weekdayData.reduce((s, d) => s + d.whatif8Uncovered, 0);
     const eightDays = weekdayData.filter(d => d.whatif8Uncovered > 0).length;
 
-    // Filter samples for this month
+    // Filter samples respecting exclusions
     const nineSamples = WHATIF_DATA.nineSites.samples.filter(
-      s => s.date.substring(5, 7) === monthFilter
+      s => !EXCLUDED_SET.has(s.date) && (monthFilter === 'all' || s.date.substring(5, 7) === monthFilter)
     );
     const eightSamples = WHATIF_DATA.eightSites.samples.filter(
-      s => s.date.substring(5, 7) === monthFilter
+      s => !EXCLUDED_SET.has(s.date) && (monthFilter === 'all' || s.date.substring(5, 7) === monthFilter)
     );
 
     return {
@@ -739,16 +725,33 @@ export default function ScheduleAnalysisPage() {
           <KPICard icon={Users} value={kpis.whatif8} label="At Risk (8 Sites)" sublabel="Patients affected" color={RED} />
         </div>
 
-        {/* ── Weekend Staffing Note ───────────────────────────────── */}
-        <div className="rounded-xl border p-4 mb-8 flex items-start gap-3" style={{ backgroundColor: `${NAVY}05`, borderColor: '#D8DCE3' }}>
-          <Clock size={18} color={GOLD} className="shrink-0 mt-0.5" />
-          <div>
-            <div className="text-sm font-bold" style={{ color: NAVY_DEEP }}>Weekend Staffing</div>
-            <p className="text-sm mt-0.5" style={{ color: NAVY }}>
-              Weekends require <strong>2 sites of service from 7:00 AM – 3:00 PM</strong> and{' '}
-              <strong>1 site thereafter</strong>. The analysis above focuses on weekday operations,
-              where the staffing demand is significantly higher and drives contract requirements.
-            </p>
+        {/* ── Weekend Staffing & Exclusions Notes ─────────────────── */}
+        <div className="space-y-3 mb-8">
+          <div className="rounded-xl border p-4 flex items-start gap-3" style={{ backgroundColor: `${NAVY}05`, borderColor: '#D8DCE3' }}>
+            <Clock size={18} color={GOLD} className="shrink-0 mt-0.5" />
+            <div>
+              <div className="text-sm font-bold" style={{ color: NAVY_DEEP }}>Weekend Staffing</div>
+              <p className="text-sm mt-0.5" style={{ color: NAVY }}>
+                Weekends require <strong>2 sites of service from 7:00 AM – 3:00 PM</strong> and{' '}
+                <strong>1 site thereafter</strong>. The analysis focuses on weekday operations,
+                where the staffing demand is significantly higher and drives contract requirements.
+              </p>
+            </div>
+          </div>
+          <div className="rounded-xl border p-4 flex items-start gap-3" style={{ backgroundColor: `${NAVY}05`, borderColor: '#D8DCE3' }}>
+            <Filter size={18} color={SLATE} className="shrink-0 mt-0.5" />
+            <div>
+              <div className="text-sm font-bold" style={{ color: NAVY_DEEP }}>Excluded Dates</div>
+              <p className="text-sm mt-0.5" style={{ color: NAVY }}>
+                The following dates are excluded from all calculations, charts, and statistics due to
+                reduced or atypical volumes:{' '}
+                <strong>Thanksgiving</strong> (Nov 27),{' '}
+                <strong>Christmas Eve</strong> (Dec 24),{' '}
+                <strong>Christmas Day</strong> (Dec 25),{' '}
+                <strong>New Year&rsquo;s Day</strong> (Jan 1), and{' '}
+                <strong>Severe Weather Days</strong> (Jan 24 &amp; Jan 25).
+              </p>
+            </div>
           </div>
         </div>
 
